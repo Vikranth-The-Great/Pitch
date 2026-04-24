@@ -1,0 +1,114 @@
+{
+    "hotel": {
+        "geometry": {
+            "location": {
+                "lat": 12.3302167,
+                "lng": 76.6450871
+            },
+            "viewport": {
+                "northeast": {
+                    "lat": 12.3315021302915,
+                    "lng": 76.64649658029151
+                },
+                "southwest": {
+                    "lat": 12.3288041697085,
+                    "lng": 76.64379861970849
+                }
+            }
+        },
+        "name": "Grand Mercure Mysore",
+        "rating": 4.5,
+        "place_id": "ChIJjyU3zX5wrzsRz3MBdL7GEoU",
+        "hotel_score": 72.38715725295535,
+        "distance_penalty": 1.96,
+        "justification": "Picked for its 4.5 rating and proximity to the center of your planned activities."
+    },
+    "days": [
+        {
+            "day": 1,
+            "plan": [
+                {
+                    "location_name": "Payana Car Museum",
+                    "arrival_time": "09:25 AM",
+                    "departure_time": "10:25 AM",
+                    "price_level": 2
+                },
+                {
+                    "location_name": "GRS Up Down",
+                    "arrival_time": "10:58 AM",
+                    "departure_time": "11:58 AM",
+                    "price_level": 2
+                },
+                {
+                    "location_name": "Kala Devi Doll Museum",
+                    "arrival_time": "12:34 PM",
+                    "departure_time": "01:34 PM",
+                    "price_level": 2
+                },
+                {
+                    "location_name": "\ud83c\udf74 Lunch: Cloverdale Cuisine",
+                    "arrival_time": "01:49 PM",
+                    "departure_time": "02:49 PM"
+                },
+                {
+                    "location_name": "Guinness World Record Sea Shell Art Museum",
+                    "arrival_time": "03:09 PM",
+                    "departure_time": "04:09 PM",
+                    "price_level": 2
+                },
+                {
+                    "location_name": "Lokaranjan Aqua World Underwater Zoo",
+                    "arrival_time": "04:30 PM",
+                    "departure_time": "05:30 PM",
+                    "price_level": 2
+                },
+                {
+                    "location_name": "Gowri\u2019s Sand Museum Mysore",
+                    "arrival_time": "05:50 PM",
+                    "departure_time": "06:50 PM",
+                    "price_level": 2
+                }
+            ]
+        },
+        {
+            "day": 2,
+            "plan": [
+                {
+                    "location_name": "Gumbaz-e-Shahi",
+                    "arrival_time": "09:25 AM",
+                    "departure_time": "10:25 AM",
+                    "price_level": 2
+                },
+                {
+                    "location_name": "Srirangapattana Ghat",
+                    "arrival_time": "10:54 AM",
+                    "departure_time": "11:54 AM",
+                    "price_level": 2
+                },
+                {
+                    "location_name": "TIPU SULTAN SUMMER PALACE",
+                    "arrival_time": "12:17 PM",
+                    "departure_time": "01:17 PM",
+                    "price_level": 2
+                },
+                {
+                    "location_name": "\ud83c\udf74 Lunch: Cloverdale Cuisine",
+                    "arrival_time": "01:32 PM",
+                    "departure_time": "02:32 PM"
+                },
+                {
+                    "location_name": "Tipu Sultan Palace",
+                    "arrival_time": "02:55 PM",
+                    "departure_time": "03:55 PM",
+                    "price_level": 2
+                },
+                {
+                    "location_name": "Tipu Sultan Fort",
+                    "arrival_time": "04:14 PM",
+                    "departure_time": "05:14 PM",
+                    "price_level": 2
+                }
+            ]
+        }
+    ]
+}

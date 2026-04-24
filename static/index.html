@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WanderWise | Demo Planner</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: rgba(15, 23, 42, 0.82);
+      --panel-border: rgba(148, 163, 184, 0.22);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #f59e0b;
+      --accent-2: #22c55e;
+      --line: rgba(148, 163, 184, 0.18);
+      --shadow: 0 24px 80px rgba(2, 6, 23, 0.48);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(245, 158, 11, 0.22), transparent 32%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 28%),
+        linear-gradient(160deg, #020617 0%, #0f172a 45%, #111827 100%);
+    }
+
+    .shell {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 48px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.24em;
+      font-size: 0.78rem;
+      color: var(--accent);
+      margin: 0 0 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.5rem, 5vw, 4.6rem);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+    }
+
+    .lede {
+      max-width: 60ch;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .stat-card, .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .stat-card {
+      padding: 22px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .stat-row:last-child { border-bottom: 0; padding-bottom: 0; }
+
+    .stat-label { color: var(--muted); }
+    .stat-value { font-weight: 700; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .panel {
+      padding: 22px;
+    }
+
+    .panel h2 {
+      margin: 0 0 18px;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+    }
+
+    form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    input, select, button {
+      width: 100%;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.72);
+      color: var(--text);
+      padding: 12px 14px;
+      font: inherit;
+    }
+
+    input:focus, select:focus {
+      outline: 2px solid rgba(245, 158, 11, 0.48);
+      border-color: transparent;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 700;
+      background: linear-gradient(135deg, #f59e0b, #fb7185);
+      border: 0;
+      color: #111827;
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+
+    button:hover { transform: translateY(-1px); filter: brightness(1.03); }
+    button:disabled { opacity: 0.7; cursor: wait; }
+
+    .result {
+      display: grid;
+      gap: 16px;
+    }
+
+    .result-empty {
+      color: var(--muted);
+      border: 1px dashed rgba(148, 163, 184, 0.25);
+      border-radius: 16px;
+      padding: 18px;
+      line-height: 1.6;
+    }
+
+    .result-card {
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 18px;
+      padding: 16px;
+      background: rgba(2, 6, 23, 0.42);
+    }
+
+    .hotel-line {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+
+    .hotel-line strong, .day-title, .item-title { color: #fff; }
+
+    .day-title {
+      margin: 0 0 10px;
+      font-size: 1rem;
+    }
+
+    .item {
+      display: grid;
+      gap: 4px;
+      padding: 12px 0;
+      border-top: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .item:first-of-type { border-top: 0; padding-top: 0; }
+
+    .item-meta, .summary {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .error {
+      color: #fecaca;
+      background: rgba(127, 29, 29, 0.35);
+      border: 1px solid rgba(248, 113, 113, 0.28);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      .hero, .grid, .fields { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">WanderWise demo planner</p>
+        <h1>Practical itineraries with real constraints.</h1>
+        <p class="lede">
+          Generate a budget-aware travel plan that respects opening hours, travel time, and multi-day trip limits.
+          The form below sends the same payload as the API and renders the returned hotel, daily stops, and summary.
+        </p>
+      </div>
+      <aside class="stat-card">
+        <div class="stat-row"><span class="stat-label">Status</span><span class="stat-value">Live demo</span></div>
+        <div class="stat-row"><span class="stat-label">Endpoint</span><span class="stat-value">POST /api/generate-itinerary</span></div>
+        <div class="stat-row"><span class="stat-label">View</span><span class="stat-value">/static/index.html</span></div>
+      </aside>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Trip Inputs</h2>
+        <form id="itinerary-form">
+          <div class="fields">
+            <label>
+              City
+              <input name="city" value="Mysuru" required />
+            </label>
+            <label>
+              Start Date
+              <input name="trip_start_date" type="date" value="2025-08-10" required />
+            </label>
+            <label>
+              Days
+              <input name="num_days" type="number" min="1" value="1" required />
+            </label>
+            <label>
+              People
+              <input name="num_people" type="number" min="1" value="2" required />
+            </label>
+            <label>
+              Theme
+              <select name="theme">
+                <option>Historical</option>
+                <option>Devotional</option>
+                <option>Adventure</option>
+                <option>Entertainment</option>
+              </select>
+            </label>
+            <label>
+              Travel Type
+              <select name="travel_type">
+                <option>Solo</option>
+                <option selected>Couple</option>
+                <option>Friends</option>
+                <option>Family</option>
+              </select>
+            </label>
+            <label>
+              Budget Tier
+              <select name="budget_tier">
+                <option>Low</option>
+                <option selected>Medium</option>
+                <option>High</option>
+              </select>
+            </label>
+            <label>
+              Total Budget
+              <input name="total_budget" type="number" min="0" value="8000" required />
+            </label>
+          </div>
+          <button id="submit-btn" type="submit">Generate itinerary</button>
+          <div id="error" class="error"></div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Results</h2>
+        <div id="result" class="result">
+          <div class="result-empty">
+            Submit the form to render the hotel recommendation, the day-by-day itinerary, and the budget summary.
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById('itinerary-form');
+    const result = document.getElementById('result');
+    const errorBox = document.getElementById('error');
+    const submitButton = document.getElementById('submit-btn');
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function renderResult(data) {
+      const daysHtml = data.days.map((day) => {
+        const entriesHtml = day.itinerary.map((entry) => {
+          const mealPrefix = entry.meal_type ? `${escapeHtml(entry.meal_type)} - ` : '';
+          return `
+            <div class="item">
+              <div class="item-title">${escapeHtml(entry.arrival_time)} → ${escapeHtml(entry.departure_time)} | ${mealPrefix}${escapeHtml(entry.location_name)}</div>
+              <div class="item-meta">${escapeHtml(entry.category)} | Travel: ${entry.travel_time_from_previous} min | ₹${entry.cost}${entry.place_id ? ` | ID: ${escapeHtml(entry.place_id)}` : ''}</div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <section class="result-card">
+            <h3 class="day-title">Day ${day.day} - ${escapeHtml(day.date)}</h3>
+            ${entriesHtml || '<div class="summary">No itinerary entries were added for this day.</div>'}
+            <div class="summary" style="margin-top: 12px;">Day Total: ₹${day.day_cost}</div>
+          </section>
+        `;
+      }).join('');
+
+      result.innerHTML = `
+        <section class="result-card">
+          <div class="hotel-line">
+            <strong>${escapeHtml(data.hotel.name)}</strong>
+            <span class="summary">Rating ${escapeHtml(data.hotel.rating)} | ₹${escapeHtml(data.hotel.cost_per_night)}/night</span>
+          </div>
+          <div class="summary">${escapeHtml(data.hotel.address || 'Address not available')}</div>
+        </section>
+        ${daysHtml}
+        <section class="result-card">
+          <div class="summary">Total Cost: ₹${data.summary.total_cost}</div>
+          <div class="summary">Budget Limit: ₹${data.summary.budget_limit}</div>
+          <div class="summary">Within Budget: ${data.summary.within_budget ? 'Yes' : 'No'}</div>
+        </section>
+      `;
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      errorBox.style.display = 'none';
+      submitButton.disabled = true;
+      submitButton.textContent = 'Generating...';
+
+      try {
+        const formData = new FormData(form);
+        const payload = {
+          city: formData.get('city'),
+          trip_start_date: formData.get('trip_start_date'),
+          num_days: Number(formData.get('num_days')),
+          num_people: Number(formData.get('num_people')),
+          theme: formData.get('theme'),
+          travel_type: formData.get('travel_type'),
+          budget_tier: formData.get('budget_tier'),
+          total_budget: Number(formData.get('total_budget')),
+        };
+
+        const response = await fetch('/api/generate-itinerary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const body = await response.json();
+        if (!response.ok) {
+          throw new Error(body.detail || body.message || 'Unable to generate itinerary');
+        }
+
+        renderResult(body);
+      } catch (error) {
+        errorBox.textContent = error.message;
+        errorBox.style.display = 'block';
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Generate itinerary';
+      }
+    });
+  </script>
+</body>
+</html>

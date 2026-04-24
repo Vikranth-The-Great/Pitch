@@ -1,0 +1,462 @@
+[
+    {
+        "geometry": {
+            "location": {
+                "lat": 12.3035723,
+                "lng": 76.6552167
+            },
+            "viewport": {
+                "northeast": {
+                    "lat": 12.3049142802915,
+                    "lng": 76.6566162802915
+                },
+                "southwest": {
+                    "lat": 12.3022163197085,
+                    "lng": 76.6539183197085
+                }
+            }
+        },
+        "name": "Mysuru Palace Museum",
+        "rating": 4.6,
+        "types": [
+            "establishment",
+            "museum",
+            "point_of_interest"
+        ],
+        "place_id": "ChIJzZbWM_pxrzsRGmmXrkIzhKM"
+    },
+    {
+        "geometry": {
+            "location": {
+                "lat": 12.3898698,
+                "lng": 76.6690849
+            },
+            "viewport": {
+                "northeast": {
+                    "lat": 12.3912948802915,
+                    "lng": 76.66944533029151
+                },
+                "southwest": {
+                    "lat": 12.3885969197085,
+                    "lng": 76.66674736970849
+                }
+            }
+        },
+        "name": "Payana Car Museum",
+        "opening_hours": {
+            "open_now": true,
+            "periods": [
+                {
+                    "close": {
+                        "day": 0,
+                        "time": "2000"
+                    },
+                    "open": {
+                        "day": 0,
+                        "time": "0900"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 1,
+                        "time": "2000"
+                    },
+                    "open": {
+                        "day": 1,
+                        "time": "0900"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 2,
+                        "time": "2000"
+                    },
+                    "open": {
+                        "day": 2,
+                        "time": "0900"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 3,
+                        "time": "2000"
+                    },
+                    "open": {
+                        "day": 3,
+                        "time": "0900"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 4,
+                        "time": "2000"
+                    },
+                    "open": {
+                        "day": 4,
+                        "time": "0900"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 5,
+                        "time": "2000"
+                    },
+                    "open": {
+                        "day": 5,
+                        "time": "0900"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 6,
+                        "time": "2000"
+                    },
+                    "open": {
+                        "day": 6,
+                        "time": "0900"
+                    }
+                }
+            ],
+            "weekday_text": [
+                "Monday: 9:00\u202fAM\u2009\u2013\u20098:00\u202fPM",
+                "Tuesday: 9:00\u202fAM\u2009\u2013\u20098:00\u202fPM",
+                "Wednesday: 9:00\u202fAM\u2009\u2013\u20098:00\u202fPM",
+                "Thursday: 9:00\u202fAM\u2009\u2013\u20098:00\u202fPM",
+                "Friday: 9:00\u202fAM\u2009\u2013\u20098:00\u202fPM",
+                "Saturday: 9:00\u202fAM\u2009\u2013\u20098:00\u202fPM",
+                "Sunday: 9:00\u202fAM\u2009\u2013\u20098:00\u202fPM"
+            ]
+        },
+        "rating": 4.7,
+        "types": [
+            "establishment",
+            "museum",
+            "point_of_interest",
+            "tourist_attraction"
+        ],
+        "place_id": "ChIJR-krZwB3rzsRz9d2pSDBrXU"
+    },
+    {
+        "geometry": {
+            "location": {
+                "lat": 12.3068216,
+                "lng": 76.6497928
+            },
+            "viewport": {
+                "northeast": {
+                    "lat": 12.3080719802915,
+                    "lng": 76.65112478029151
+                },
+                "southwest": {
+                    "lat": 12.3053740197085,
+                    "lng": 76.64842681970849
+                }
+            }
+        },
+        "name": "Jaganmohana Palace (Sri Jayachamarajendra Art Gallery) And Auditorium",
+        "opening_hours": {
+            "open_now": true,
+            "periods": [
+                {
+                    "close": {
+                        "day": 0,
+                        "time": "1700"
+                    },
+                    "open": {
+                        "day": 0,
+                        "time": "0830"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 1,
+                        "time": "1700"
+                    },
+                    "open": {
+                        "day": 1,
+                        "time": "0830"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 2,
+                        "time": "1700"
+                    },
+                    "open": {
+                        "day": 2,
+                        "time": "0830"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 3,
+                        "time": "1700"
+                    },
+                    "open": {
+                        "day": 3,
+                        "time": "0830"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 4,
+                        "time": "1700"
+                    },
+                    "open": {
+                        "day": 4,
+                        "time": "0830"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 5,
+                        "time": "1700"
+                    },
+                    "open": {
+                        "day": 5,
+                        "time": "0830"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 6,
+                        "time": "1700"
+                    },
+                    "open": {
+                        "day": 6,
+                        "time": "0830"
+                    }
+                }
+            ],
+            "weekday_text": [
+                "Monday: 8:30\u202fAM\u2009\u2013\u20095:00\u202fPM",
+                "Tuesday: 8:30\u202fAM\u2009\u2013\u20095:00\u202fPM",
+                "Wednesday: 8:30\u202fAM\u2009\u2013\u20095:00\u202fPM",
+                "Thursday: 8:30\u202fAM\u2009\u2013\u20095:00\u202fPM",
+                "Friday: 8:30\u202fAM\u2009\u2013\u20095:00\u202fPM",
+                "Saturday: 8:30\u202fAM\u2009\u2013\u20095:00\u202fPM",
+                "Sunday: 8:30\u202fAM\u2009\u2013\u20095:00\u202fPM"
+            ]
+        },
+        "rating": 4.2,
+        "types": [
+            "art_gallery",
+            "establishment",
+            "museum",
+            "point_of_interest",
+            "tourist_attraction"
+        ],
+        "place_id": "ChIJbfn1YQ5wrzsRzF8AIqdEOvU"
+    },
+    {
+        "geometry": {
+            "location": {
+                "lat": 12.3139265,
+                "lng": 76.62222729999999
+            },
+            "viewport": {
+                "northeast": {
+                    "lat": 12.3152737802915,
+                    "lng": 76.6235106802915
+                },
+                "southwest": {
+                    "lat": 12.3125758197085,
+                    "lng": 76.6208127197085
+                }
+            }
+        },
+        "name": "Jayalakshmi Vilas Mansion \u0c9c\u0caf\u0cb2\u0c95\u0ccd\u0cb7\u0ccd\u0cae\u0cc0 \u0cb5\u0cbf\u0cb2\u0cbe\u0cb8\u0ccd \u0c85\u0cb0\u0cae\u0ca8\u0cc6",
+        "opening_hours": {
+            "open_now": true,
+            "periods": [
+                {
+                    "close": {
+                        "day": 1,
+                        "time": "1600"
+                    },
+                    "open": {
+                        "day": 1,
+                        "time": "1100"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 2,
+                        "time": "1600"
+                    },
+                    "open": {
+                        "day": 2,
+                        "time": "1100"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 3,
+                        "time": "1600"
+                    },
+                    "open": {
+                        "day": 3,
+                        "time": "1100"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 4,
+                        "time": "1600"
+                    },
+                    "open": {
+                        "day": 4,
+                        "time": "1100"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 5,
+                        "time": "1600"
+                    },
+                    "open": {
+                        "day": 5,
+                        "time": "1100"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 6,
+                        "time": "1600"
+                    },
+                    "open": {
+                        "day": 6,
+                        "time": "1100"
+                    }
+                }
+            ],
+            "weekday_text": [
+                "Monday: 11:00\u202fAM\u2009\u2013\u20094:00\u202fPM",
+                "Tuesday: 11:00\u202fAM\u2009\u2013\u20094:00\u202fPM",
+                "Wednesday: 11:00\u202fAM\u2009\u2013\u20094:00\u202fPM",
+                "Thursday: 11:00\u202fAM\u2009\u2013\u20094:00\u202fPM",
+                "Friday: 11:00\u202fAM\u2009\u2013\u20094:00\u202fPM",
+                "Saturday: 11:00\u202fAM\u2009\u2013\u20094:00\u202fPM",
+                "Sunday: Closed"
+            ]
+        },
+        "rating": 4.2,
+        "types": [
+            "establishment",
+            "point_of_interest",
+            "tourist_attraction"
+        ],
+        "place_id": "ChIJAQBAuZV6rzsRrDCUIZBwfv8"
+    },
+    {
+        "geometry": {
+            "location": {
+                "lat": 12.2957089,
+                "lng": 76.6811075
+            },
+            "viewport": {
+                "northeast": {
+                    "lat": 12.2972004302915,
+                    "lng": 76.6825133802915
+                },
+                "southwest": {
+                    "lat": 12.2945024697085,
+                    "lng": 76.67981541970849
+                }
+            }
+        },
+        "name": "Guinness World Record Sea Shell Art Museum",
+        "opening_hours": {
+            "open_now": true,
+            "periods": [
+                {
+                    "close": {
+                        "day": 0,
+                        "time": "1800"
+                    },
+                    "open": {
+                        "day": 0,
+                        "time": "0900"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 1,
+                        "time": "1800"
+                    },
+                    "open": {
+                        "day": 1,
+                        "time": "0900"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 2,
+                        "time": "1800"
+                    },
+                    "open": {
+                        "day": 2,
+                        "time": "0900"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 3,
+                        "time": "1800"
+                    },
+                    "open": {
+                        "day": 3,
+                        "time": "0900"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 4,
+                        "time": "1800"
+                    },
+                    "open": {
+                        "day": 4,
+                        "time": "0900"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 5,
+                        "time": "1800"
+                    },
+                    "open": {
+                        "day": 5,
+                        "time": "0900"
+                    }
+                },
+                {
+                    "close": {
+                        "day": 6,
+                        "time": "1800"
+                    },
+                    "open": {
+                        "day": 6,
+                        "time": "0900"
+                    }
+                }
+            ],
+            "weekday_text": [
+                "Monday: 9:00\u202fAM\u2009\u2013\u20096:00\u202fPM",
+                "Tuesday: 9:00\u202fAM\u2009\u2013\u20096:00\u202fPM",
+                "Wednesday: 9:00\u202fAM\u2009\u2013\u20096:00\u202fPM",
+                "Thursday: 9:00\u202fAM\u2009\u2013\u20096:00\u202fPM",
+                "Friday: 9:00\u202fAM\u2009\u2013\u20096:00\u202fPM",
+                "Saturday: 9:00\u202fAM\u2009\u2013\u20096:00\u202fPM",
+                "Sunday: 9:00\u202fAM\u2009\u2013\u20096:00\u202fPM"
+            ]
+        },
+        "rating": 4.7,
+        "types": [
+            "establishment",
+            "museum",
+            "point_of_interest",
+            "tourist_attraction"
+        ],
+        "place_id": "ChIJ5w1_eSlwrzsRek7jakvwr38"
+    }
+]

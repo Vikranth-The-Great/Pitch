@@ -1,0 +1,32 @@
+[
+    {
+        "location_name": "Payana Car Museum",
+        "arrival_time": "09:25 AM",
+        "departure_time": "10:25 AM",
+        "score": 112.0
+    },
+    {
+        "location_name": "Guinness World Record Sea Shell Art Museum",
+        "arrival_time": "10:57 AM",
+        "departure_time": "11:57 AM",
+        "score": 112.0
+    },
+    {
+        "location_name": "Mysuru Palace Museum",
+        "arrival_time": "12:06 PM",
+        "departure_time": "01:06 PM",
+        "score": 111.0
+    },
+    {
+        "location_name": "Jaganmohana Palace (Sri Jayachamarajendra Art Gallery) And Auditorium",
+        "arrival_time": "01:08 PM",
+        "departure_time": "02:38 PM",
+        "score": 107.0
+    },
+    {
+        "location_name": "Jayalakshmi Vilas Mansion \u0c9c\u0caf\u0cb2\u0c95\u0ccd\u0cb7\u0ccd\u0cae\u0cc0 \u0cb5\u0cbf\u0cb2\u0cbe\u0cb8\u0ccd \u0c85\u0cb0\u0cae\u0ca8\u0cc6",
+        "arrival_time": "02:47 PM",
+        "departure_time": "03:47 PM",
+        "score": 92.0
+    }
+]
