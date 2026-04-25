@@ -20,12 +20,18 @@ Trip Profile:
 
 Instructions:
 1. You must return ONLY a valid JSON object. No conversational text.
-2. Schedule activities between 08:00 and 21:00.
-3. Include Breakfast (~08:00), Lunch (~13:00), and Dinner (~19:00).
-4. VARIETY IS KEY: Do not pick the same restaurant for different meals or different days. 
-5. For every entry, provide a short 'ai_justification' (one sentence) explaining why it was chosen based on the trip theme and travel type.
-6. STRICT BUDGET RULE: Stay within the 'remaining_budget' for the day. Each attraction and restaurant has an estimated cost. Do not exceed it.
-7. Return the schedule as a list of entries with arrival/departure times.
+2. Schedule activities between 08:00 and 22:00.
+3. MANDATORY MEALS: 
+   - Breakfast: ~08:00
+   - Lunch: ~13:00 
+   - Dinner: ~19:00 (MUST be labeled "Dinner", not "Lunch")
+4. VARIETY IS CRITICAL: 
+   - Do not pick the same restaurant twice.
+   - Do not pick different branches of the same brand (e.g., "Kareem's Kitchen") on the same day. 
+   - Try to provide diverse culinary experiences.
+5. For every entry, provide a short 'ai_justification' (one sentence).
+6. STRICT BUDGET RULE: Stay within the 'remaining_budget' for the day. 
+7. LOGICAL SEQUENCE: Group nearby places together to minimize travel.
 
 Required JSON Schema:
 {{
@@ -67,10 +73,10 @@ MAX ACTIVITY BUDGET FOR THIS DAY: Rs {day_context.get('remaining_budget')}
 Candidate Places:
 {json.dumps(compact_places, indent=2)}
 
-Already Visited IDs (DO NOT REUSE THESE PLACES):
+Already Visited IDs:
 {list(visited_ids)}
 
-Generate the JSON schedule for this day. Ensure a logical flow and unique dining experiences."""
+Generate the JSON schedule for this day. Include Breakfast, Lunch, and Dinner. Avoid repeating brands."""
 
 def plan_day(system_prompt: str, user_prompt: str, openai_client: OpenAI) -> dict[str, Any]:
     """Calls OpenAI API to generate a day's plan."""

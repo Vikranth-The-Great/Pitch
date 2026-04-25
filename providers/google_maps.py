@@ -134,32 +134,42 @@ def fetch_places(city: str, place_type: str, limit: int) -> list[dict[str, Any]]
 
 
 def fetch_travel_time(
-    origin_lat: float,
-    origin_lng: float,
-    dest_lat: float,
-    dest_lng: float,
-    departure_time: int | datetime,
+    origin_lat: float | None,
+    origin_lng: float | None,
+    dest_lat: float | None,
+    dest_lng: float | None,
+    departure_time: int | datetime | date,
 ) -> int:
     """Return driving time in minutes between two coordinates."""
     if isinstance(departure_time, datetime):
-        departure_epoch = int(departure_time.timestamp())
+        departure_epoch: Any = int(departure_time.timestamp())
     elif isinstance(departure_time, date):
-        # Convert date to datetime at midnight
         departure_epoch = int(datetime.combine(departure_time, datetime.min.time()).timestamp())
     else:
         departure_epoch = int(departure_time)
 
+    # Ensure departure_time is not in the past (Google API requirement for traffic)
+    now_epoch = int(datetime.now().timestamp())
+    if isinstance(departure_epoch, int) and departure_epoch < now_epoch:
+        departure_epoch = "now"
+
+    if origin_lat is None or origin_lng is None or dest_lat is None or dest_lng is None:
+        return 10
+
     try:
         api_key = _require_api_key()
+        params: dict[str, Any] = {
+            "origins": f"{origin_lat},{origin_lng}",
+            "destinations": f"{dest_lat},{dest_lng}",
+            "mode": "driving",
+            "key": api_key,
+        }
+        if departure_epoch != "now":
+            params["departure_time"] = departure_epoch
+
         response = _request_json(
             f"{GOOGLE_MAPS_BASE_URL}/distancematrix/json",
-            {
-                "origins": f"{origin_lat},{origin_lng}",
-                "destinations": f"{dest_lat},{dest_lng}",
-                "mode": "driving",
-                "departure_time": departure_epoch,
-                "key": api_key,
-            },
+            params,
         )
         element = response["rows"][0]["elements"][0]
         if element.get("status") != "OK":
