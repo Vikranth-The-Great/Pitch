@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WanderWise | Demo Planner</title>
+  <title>WanderWise | AI Travel Planner</title>
   <style>
     :root {
       --bg: #0f172a;
-      --panel: rgba(15, 23, 42, 0.82);
-      --panel-border: rgba(148, 163, 184, 0.22);
-      --text: #e2e8f0;
+      --panel: rgba(15, 23, 42, 0.85);
+      --panel-border: rgba(148, 163, 184, 0.2);
+      --text: #f8fafc;
       --muted: #94a3b8;
       --accent: #f59e0b;
-      --accent-2: #22c55e;
-      --line: rgba(148, 163, 184, 0.18);
-      --shadow: 0 24px 80px rgba(2, 6, 23, 0.48);
+      --accent-2: #10b981;
+      --line: rgba(148, 163, 184, 0.15);
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
     }
 
     * { box-sizing: border-box; }
@@ -22,379 +22,448 @@
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
       color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(245, 158, 11, 0.22), transparent 32%),
-        radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 28%),
-        linear-gradient(160deg, #020617 0%, #0f172a 45%, #111827 100%);
+      background: 
+        radial-gradient(circle at 0% 0%, rgba(245, 158, 11, 0.15), transparent 40%),
+        radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.1), transparent 40%),
+        #020617;
+      line-height: 1.5;
     }
 
     .shell {
-      width: min(1120px, calc(100% - 32px));
+      width: min(1200px, calc(100% - 40px));
       margin: 0 auto;
-      padding: 32px 0 48px;
+      padding: 40px 0 60px;
     }
 
-    .hero {
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 24px;
-      align-items: end;
-      margin-bottom: 24px;
+    .header-area {
+      margin-bottom: 40px;
     }
 
     .eyebrow {
       text-transform: uppercase;
-      letter-spacing: 0.24em;
-      font-size: 0.78rem;
+      letter-spacing: 0.3em;
+      font-size: 0.7rem;
+      font-weight: 800;
       color: var(--accent);
-      margin: 0 0 12px;
+      margin-bottom: 8px;
     }
 
     h1 {
       margin: 0;
-      font-size: clamp(2.5rem, 5vw, 4.6rem);
-      line-height: 0.95;
-      letter-spacing: -0.05em;
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      background: linear-gradient(to bottom right, #fff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .lede {
-      max-width: 60ch;
-      margin: 18px 0 0;
+      max-width: 65ch;
+      margin-top: 20px;
       color: var(--muted);
-      font-size: 1rem;
-      line-height: 1.6;
+      font-size: 1.1rem;
     }
-
-    .stat-card, .panel {
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(18px);
-    }
-
-    .stat-card {
-      padding: 22px;
-      display: grid;
-      gap: 12px;
-    }
-
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .stat-row:last-child { border-bottom: 0; padding-bottom: 0; }
-
-    .stat-label { color: var(--muted); }
-    .stat-value { font-weight: 700; }
 
     .grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
+      grid-template-columns: 380px 1fr;
+      gap: 32px;
+      align-items: start;
     }
 
     .panel {
-      padding: 22px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 28px;
+      padding: 32px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
     }
 
     .panel h2 {
-      margin: 0 0 18px;
-      font-size: 1.1rem;
-      letter-spacing: -0.02em;
+      margin: 0 0 24px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    form {
-      display: grid;
-      gap: 14px;
+    .panel h2::before {
+      content: "";
+      width: 4px;
+      height: 20px;
+      background: var(--accent);
+      border-radius: 4px;
     }
 
-    .fields {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    label {
-      display: grid;
-      gap: 6px;
-      font-size: 0.9rem;
-      color: var(--muted);
-    }
-
+    form { display: grid; gap: 20px; }
+    
+    .field-group { display: grid; gap: 8px; }
+    .field-group label { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+    
     input, select, button {
-      width: 100%;
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      border-radius: 14px;
-      background: rgba(15, 23, 42, 0.72);
-      color: var(--text);
-      padding: 12px 14px;
-      font: inherit;
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      color: #fff;
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
     }
 
     input:focus, select:focus {
-      outline: 2px solid rgba(245, 158, 11, 0.48);
-      border-color: transparent;
+      outline: none;
+      border-color: var(--accent);
+      background: rgba(30, 41, 59, 0.8);
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
     }
 
     button {
-      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), #f97316);
+      color: #000;
       font-weight: 700;
-      background: linear-gradient(135deg, #f59e0b, #fb7185);
-      border: 0;
-      color: #111827;
-      transition: transform 120ms ease, filter 120ms ease;
+      border: none;
+      margin-top: 10px;
+      cursor: pointer;
     }
 
-    button:hover { transform: translateY(-1px); filter: brightness(1.03); }
-    button:disabled { opacity: 0.7; cursor: wait; }
-
-    .result {
-      display: grid;
-      gap: 16px;
+    button:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+      box-shadow: 0 10px 20px rgba(245, 158, 11, 0.2);
     }
 
-    .result-empty {
-      color: var(--muted);
-      border: 1px dashed rgba(148, 163, 184, 0.25);
-      border-radius: 16px;
-      padding: 18px;
-      line-height: 1.6;
+    button:disabled { opacity: 0.5; transform: none; cursor: not-allowed; }
+
+    .results-area { display: grid; gap: 24px; }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: var(--shadow);
     }
 
-    .result-card {
-      border: 1px solid rgba(148, 163, 184, 0.18);
-      border-radius: 18px;
-      padding: 16px;
-      background: rgba(2, 6, 23, 0.42);
-    }
-
-    .hotel-line {
+    .hotel-card {
       display: flex;
-      flex-wrap: wrap;
       justify-content: space-between;
-      gap: 10px;
+      align-items: flex-start;
+      border-left: 4px solid var(--accent-2);
+    }
+
+    .hotel-info h3 { margin: 0 0 4px; font-size: 1.2rem; }
+    .hotel-meta { font-size: 0.9rem; color: var(--muted); }
+
+    .day-section { margin-bottom: 24px; }
+    .day-header {
+      display: flex;
+      justify-content: space-between;
       align-items: baseline;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
     }
+    .day-header h3 { margin: 0; font-size: 1.1rem; color: var(--accent); }
+    .day-summary { font-size: 0.95rem; color: #cbd5e1; font-style: italic; margin-bottom: 20px; }
 
-    .hotel-line strong, .day-title, .item-title { color: #fff; }
-
-    .day-title {
-      margin: 0 0 10px;
-      font-size: 1rem;
-    }
-
-    .item {
+    .itinerary-list { display: grid; gap: 16px; }
+    
+    .entry {
       display: grid;
-      gap: 4px;
-      padding: 12px 0;
-      border-top: 1px solid rgba(148, 163, 184, 0.14);
+      grid-template-columns: 80px 1fr;
+      gap: 16px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 16px;
+      border: 1px solid transparent;
+      transition: border-color 0.2s;
     }
+    .entry:hover { border-color: var(--line); }
 
-    .item:first-of-type { border-top: 0; padding-top: 0; }
-
-    .item-meta, .summary {
+    .entry-time {
+      font-size: 0.85rem;
+      font-weight: 700;
       color: var(--muted);
-      font-size: 0.92rem;
+      text-align: right;
+      padding-top: 2px;
     }
 
-    .error {
-      color: #fecaca;
-      background: rgba(127, 29, 29, 0.35);
-      border: 1px solid rgba(248, 113, 113, 0.28);
-      border-radius: 14px;
-      padding: 12px 14px;
+    .entry-content h4 { margin: 0 0 4px; font-size: 1rem; color: #fff; }
+    .entry-meta { font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
+    .entry-justification {
+      font-size: 0.88rem;
+      color: #94a3b8;
+      border-left: 2px solid var(--line);
+      padding-left: 12px;
+      margin-top: 8px;
+    }
+
+    .meal-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-right: 8px;
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--accent-2);
+    }
+
+    .travel-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      color: var(--accent);
+      background: rgba(245, 158, 11, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+    }
+
+    .footer-summary {
+      display: flex;
+      justify-content: space-around;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 16px;
+      text-align: center;
+    }
+    .footer-stat { display: grid; gap: 4px; }
+    .footer-stat span:first-child { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+    .footer-stat span:last-child { font-size: 1.1rem; font-weight: 800; }
+
+    .loading-spinner {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+    }
+
+    .error-box {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      margin-top: 20px;
       display: none;
     }
 
-    @media (max-width: 900px) {
-      .hero, .grid, .fields { grid-template-columns: 1fr; }
+    @media (max-width: 1000px) {
+      .grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <main class="shell">
-    <section class="hero">
-      <div>
-        <p class="eyebrow">WanderWise demo planner</p>
-        <h1>Practical itineraries with real constraints.</h1>
-        <p class="lede">
-          Generate a budget-aware travel plan that respects opening hours, travel time, and multi-day trip limits.
-          The form below sends the same payload as the API and renders the returned hotel, daily stops, and summary.
-        </p>
-      </div>
-      <aside class="stat-card">
-        <div class="stat-row"><span class="stat-label">Status</span><span class="stat-value">Live demo</span></div>
-        <div class="stat-row"><span class="stat-label">Endpoint</span><span class="stat-value">POST /api/generate-itinerary</span></div>
-        <div class="stat-row"><span class="stat-label">View</span><span class="stat-value">/static/index.html</span></div>
-      </aside>
-    </section>
+  <div class="shell">
+    <header class="header-area">
+      <p class="eyebrow">WanderWise AI Planner</p>
+      <h1>Intelligent travel, <br/>beautifully planned.</h1>
+      <p class="lede">
+        Our OpenAI-powered engine creates detailed, logical, and budget-conscious itineraries based on your personal travel style.
+      </p>
+    </header>
 
-    <section class="grid">
-      <div class="panel">
-        <h2>Trip Inputs</h2>
+    <div class="grid">
+      <aside class="panel">
+        <h2>Trip Parameters</h2>
         <form id="itinerary-form">
-          <div class="fields">
-            <label>
-              City
-              <input name="city" value="Mysuru" required />
-            </label>
-            <label>
-              Start Date
-              <input name="trip_start_date" type="date" value="2025-08-10" required />
-            </label>
-            <label>
-              Days
-              <input name="num_days" type="number" min="1" value="1" required />
-            </label>
-            <label>
-              People
-              <input name="num_people" type="number" min="1" value="2" required />
-            </label>
-            <label>
-              Theme
-              <select name="theme">
-                <option>Historical</option>
-                <option>Devotional</option>
-                <option>Adventure</option>
-                <option>Entertainment</option>
-              </select>
-            </label>
-            <label>
-              Travel Type
-              <select name="travel_type">
-                <option>Solo</option>
-                <option selected>Couple</option>
-                <option>Friends</option>
-                <option>Family</option>
-              </select>
-            </label>
-            <label>
-              Budget Tier
+          <div class="field-group">
+            <label>Destination City</label>
+            <input name="city" value="Belagavi" required />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="field-group">
+              <label>Start Date</label>
+              <input name="trip_start_date" type="date" value="2025-05-04" required />
+            </div>
+            <div class="field-group">
+              <label>Trip Days</label>
+              <input name="num_days" type="number" min="1" value="3" required />
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="field-group">
+              <label>People</label>
+              <input name="num_people" type="number" min="1" value="3" required />
+            </div>
+            <div class="field-group">
+              <label>Budget Tier</label>
               <select name="budget_tier">
                 <option>Low</option>
                 <option selected>Medium</option>
                 <option>High</option>
               </select>
-            </label>
-            <label>
-              Total Budget
-              <input name="total_budget" type="number" min="0" value="8000" required />
-            </label>
+            </div>
           </div>
-          <button id="submit-btn" type="submit">Generate itinerary</button>
-          <div id="error" class="error"></div>
+          <div class="field-group">
+            <label>Trip Theme</label>
+            <select name="theme">
+              <option selected>Historical</option>
+              <option>Devotional</option>
+              <option>Adventure</option>
+              <option>Entertainment</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Travel Type</label>
+            <select name="travel_type">
+              <option>Solo</option>
+              <option>Couple</option>
+              <option selected>Friends</option>
+              <option>Family</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Total Budget (INR)</label>
+            <input name="total_budget" type="number" min="0" value="15000" required />
+          </div>
+          <button id="submit-btn" type="submit">Build My Trip</button>
         </form>
-      </div>
+        <div id="error-display" class="error-box"></div>
+      </aside>
 
-      <div class="panel">
-        <h2>Results</h2>
-        <div id="result" class="result">
-          <div class="result-empty">
-            Submit the form to render the hotel recommendation, the day-by-day itinerary, and the budget summary.
-          </div>
+      <div id="results-display" class="results-area">
+        <div class="panel" style="text-align: center; padding: 60px 40px; color: var(--muted);">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 16px; opacity: 0.5;">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <p>Fill in your trip details and click "Build My Trip" to see your AI-generated itinerary.</p>
         </div>
       </div>
-    </section>
-  </main>
+    </div>
+  </div>
 
   <script>
     const form = document.getElementById('itinerary-form');
-    const result = document.getElementById('result');
-    const errorBox = document.getElementById('error');
-    const submitButton = document.getElementById('submit-btn');
+    const resultsArea = document.getElementById('results-display');
+    const errorBox = document.getElementById('error-display');
+    const submitBtn = document.getElementById('submit-btn');
 
-    function escapeHtml(value) {
-      return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;');
+    function escapeHtml(v) {
+      if (!v) return '';
+      return String(v).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
     }
 
-    function renderResult(data) {
-      const daysHtml = data.days.map((day) => {
-        const entriesHtml = day.itinerary.map((entry) => {
-          const mealPrefix = entry.meal_type ? `${escapeHtml(entry.meal_type)} - ` : '';
+    function renderItinerary(data) {
+      const hotelHtml = `
+        <div class="card hotel-card">
+          <div class="hotel-info">
+            <p class="eyebrow">Recommended Hotel</p>
+            <h3>${escapeHtml(data.hotel.name)}</h3>
+            <div class="hotel-meta">
+              <span>★ ${data.hotel.rating}</span> • 
+              <span>${escapeHtml(data.hotel.address)}</span>
+            </div>
+          </div>
+          <div style="text-align: right">
+            <div style="font-weight: 800; font-size: 1.1rem;">₹${data.hotel.cost_per_night}</div>
+            <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase;">Per Night</div>
+          </div>
+        </div>
+      `;
+
+      const daysHtml = data.days.map(day => {
+        const entriesHtml = day.itinerary.map(entry => {
+          const mealTag = entry.meal_type ? `<span class="meal-badge">${escapeHtml(entry.meal_type)}</span>` : '';
+          const travelTime = entry.travel_time_from_previous ? `<span class="travel-tag">🚗 ${entry.travel_time_from_previous} min travel</span>` : '';
+          
           return `
-            <div class="item">
-              <div class="item-title">${escapeHtml(entry.arrival_time)} → ${escapeHtml(entry.departure_time)} | ${mealPrefix}${escapeHtml(entry.location_name)}</div>
-              <div class="item-meta">${escapeHtml(entry.category)} | Travel: ${entry.travel_time_from_previous} min | ₹${entry.cost}${entry.place_id ? ` | ID: ${escapeHtml(entry.place_id)}` : ''}</div>
+            <div class="entry">
+              <div class="entry-time">${escapeHtml(entry.arrival_time)}</div>
+              <div class="entry-content">
+                <h4>${mealTag}${escapeHtml(entry.location_name)} ${travelTime}</h4>
+                <div class="entry-meta">
+                  ${escapeHtml(entry.category)} • 
+                  Cost: ₹${entry.cost}
+                </div>
+                ${entry.ai_justification ? `<div class="entry-justification">${escapeHtml(entry.ai_justification)}</div>` : ''}
+              </div>
             </div>
           `;
         }).join('');
 
         return `
-          <section class="result-card">
-            <h3 class="day-title">Day ${day.day} - ${escapeHtml(day.date)}</h3>
-            ${entriesHtml || '<div class="summary">No itinerary entries were added for this day.</div>'}
-            <div class="summary" style="margin-top: 12px;">Day Total: ₹${day.day_cost}</div>
-          </section>
+          <div class="day-section">
+            <div class="day-header">
+              <h3>Day ${day.day} — ${escapeHtml(day.date)}</h3>
+              <div style="font-weight: 700; color: var(--muted); font-size: 0.9rem;">₹${day.day_cost}</div>
+            </div>
+            ${day.day_summary ? `<p class="day-summary">${escapeHtml(day.day_summary)}</p>` : ''}
+            <div class="itinerary-list">
+              ${entriesHtml || '<p style="color: var(--muted); font-style: italic;">No activities planned for this day.</p>'}
+            </div>
+          </div>
         `;
       }).join('');
 
-      result.innerHTML = `
-        <section class="result-card">
-          <div class="hotel-line">
-            <strong>${escapeHtml(data.hotel.name)}</strong>
-            <span class="summary">Rating ${escapeHtml(data.hotel.rating)} | ₹${escapeHtml(data.hotel.cost_per_night)}/night</span>
+      const summaryHtml = `
+        <div class="footer-summary">
+          <div class="footer-stat">
+            <span>Total Cost</span>
+            <span style="color: ${data.summary.within_budget ? 'var(--accent-2)' : '#f87171'}">₹${data.summary.total_cost}</span>
           </div>
-          <div class="summary">${escapeHtml(data.hotel.address || 'Address not available')}</div>
-        </section>
-        ${daysHtml}
-        <section class="result-card">
-          <div class="summary">Total Cost: ₹${data.summary.total_cost}</div>
-          <div class="summary">Budget Limit: ₹${data.summary.budget_limit}</div>
-          <div class="summary">Within Budget: ${data.summary.within_budget ? 'Yes' : 'No'}</div>
-        </section>
+          <div class="footer-stat">
+            <span>Budget Limit</span>
+            <span>₹${data.summary.budget_limit}</span>
+          </div>
+          <div class="footer-stat">
+            <span>Status</span>
+            <span style="color: ${data.summary.within_budget ? 'var(--accent-2)' : '#f87171'}">${data.summary.within_budget ? 'Under Budget' : 'Over Budget'}</span>
+          </div>
+        </div>
+      `;
+
+      resultsArea.innerHTML = `
+        ${hotelHtml}
+        <div class="card" style="padding: 32px;">
+          ${daysHtml}
+          ${summaryHtml}
+        </div>
       `;
     }
 
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
       errorBox.style.display = 'none';
-      submitButton.disabled = true;
-      submitButton.textContent = 'Generating...';
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Analyzing & Planning...';
+      resultsArea.innerHTML = `<div class="panel loading-spinner">
+        <p>Searching Google Maps for the best spots...</p>
+        <p style="font-size: 0.8rem; margin-top: 10px;">Consulting AI for the perfect schedule...</p>
+      </div>`;
 
       try {
         const formData = new FormData(form);
-        const payload = {
-          city: formData.get('city'),
-          trip_start_date: formData.get('trip_start_date'),
-          num_days: Number(formData.get('num_days')),
-          num_people: Number(formData.get('num_people')),
-          theme: formData.get('theme'),
-          travel_type: formData.get('travel_type'),
-          budget_tier: formData.get('budget_tier'),
-          total_budget: Number(formData.get('total_budget')),
-        };
+        const payload = Object.fromEntries(formData.entries());
+        payload.num_days = parseInt(payload.num_days);
+        payload.num_people = parseInt(payload.num_people);
+        payload.total_budget = parseInt(payload.total_budget);
 
-        const response = await fetch('/api/generate-itinerary', {
+        const res = await fetch('/api/generate-itinerary', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(payload)
         });
 
-        const body = await response.json();
-        if (!response.ok) {
-          throw new Error(body.detail || body.message || 'Unable to generate itinerary');
-        }
-
-        renderResult(body);
-      } catch (error) {
-        errorBox.textContent = error.message;
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Failed to generate plan');
+        
+        renderItinerary(data);
+      } catch (err) {
+        errorBox.textContent = err.message;
         errorBox.style.display = 'block';
+        resultsArea.innerHTML = `<div class="panel" style="text-align: center; color: var(--muted); padding: 40px;">Failed to generate plan. Please check your API keys and try again.</div>`;
       } finally {
-        submitButton.disabled = false;
-        submitButton.textContent = 'Generate itinerary';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Build My Trip';
       }
     });
   </script>

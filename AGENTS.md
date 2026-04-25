@@ -1,270 +1,249 @@
-# AGENTS.md — WanderWise: Practical Travel Itinerary Generator
+# AGENTS.md — WanderWise AI Rebuild
 
-> This file is the primary guide for AI coding agents (Copilot, Cursor, Codex, etc.) working on WanderWise.
-> Read this file fully before writing any code. Follow every instruction precisely.
-
----
-
-## Project Overview
-
-WanderWise is a backend-first travel itinerary generation system.
-
-Given a destination city, trip dates, number of people, budget, and personalization preferences,
-the system fetches real places from Google Maps APIs, scores and ranks them, selects the best hotel,
-and constructs a practical day-by-day schedule that respects opening hours, travel time, and budget constraints.
-
-The algorithm is fixed and must not be changed. See `docs/ALGORITHM.md` for the complete algorithm specification.
+> **Blueprint for AI coding agents working on the WanderWise itinerary generator.**
+> All planning documents live in `docs/`. Implementation follows the phase order in `PLAN.md`.
 
 ---
 
-## Business Requirements
+## 1. Project Overview
 
-### Inputs the system must accept
+WanderWise is a travel itinerary generator that takes a user's trip parameters — city, dates,
+number of people, budget, theme, and travel type — and produces a structured day-by-day plan
+including a hotel recommendation, attractions, and meal stops.
 
-| Field            | Description                                                       |
-|------------------|-------------------------------------------------------------------|
-| city             | Destination city (e.g., Mysuru)                                   |
-| trip_start_date  | ISO date string — used to check day-of-week opening hours         |
-| num_days         | Number of trip days — controls nearby hub expansion               |
-| num_people       | Number of travellers — used for cost calculations                 |
-| theme            | One of: Historical, Devotional, Adventure, Entertainment          |
-| travel_type      | One of: Solo, Couple, Friends, Family                             |
-| budget_tier      | One of: Low, Medium, High                                         |
-| total_budget     | Maximum spend in INR (integer)                                    |
+### The core problem with the current implementation
 
-### Output the system must return
+The existing system uses a **hand-written heuristic algorithm** to rank and schedule places. It is
+rigid, produces mediocre itineraries, ignores `travel_type`, handles meals poorly, and performs
+redundant Google API calls that waste quota and add latency.
 
-For each day the system must return:
+### The solution
 
-- Recommended hotel (name, address, rating, estimated cost per night, image URL)
-- Ordered itinerary entries:
-  - location_name
-  - arrival_time
-  - departure_time
-  - travel_time_from_previous (minutes)
-  - cost (INR, per group)
-  - image_url
-  - category (Attraction / Restaurant / Hotel)
-  - meal_type (if applicable: Breakfast / Lunch / Dinner)
-- Daily cost summary
-- Total trip cost summary vs budget cap
+Replace the ranking and scheduling brain with **OpenAI GPT-4o**. Google Maps APIs remain the
+data source for live place discovery, photos, hours, and travel times. OpenAI becomes the
+intelligence layer that:
 
-### Functional constraints
+- Selects and ranks the best places for the given trip profile.
+- Constructs a coherent, human-quality day schedule.
+- Writes a short natural-language justification for every recommendation.
+- Handles breakfast, lunch, and dinner intelligently across all days.
 
-- Opening hours must be validated against the actual day of the week derived from trip_start_date
-- Travel time between locations must be fetched from Google Distance Matrix API
-- Budget cap must be strictly enforced — no itinerary entry may cause running_cost to exceed total_budget
-- No place may appear twice across the full itinerary
-- Lunch must be inserted after 13:00 on each day
-- Breakfast and dinner slots are nice-to-have if budget and time allow
+The result is a system where Google Maps provides **accurate, live data** and OpenAI provides
+**intelligent, contextual planning**.
 
 ---
 
-## Technical Stack
+## 2. Business Requirements
 
-| Layer         | Technology                              |
-|---------------|-----------------------------------------|
-| Language      | Python 3.11+                            |
-| API Framework | FastAPI                                 |
-| HTTP Client   | httpx (async) or requests (sync)        |
-| Google APIs   | Places API, Place Details API, Distance Matrix API |
-| Config        | python-dotenv (.env file)               |
-| Validation    | Pydantic v2 (request/response models)  |
-| Testing       | pytest                                  |
-| Serialization | JSON (built-in)                         |
-| CLI Runner    | Python argparse or plain script         |
+### Functional requirements
 
-> No database is required for MVP. All data is fetched live from Google Maps APIs per request.
-> No frontend framework is required. A simple HTML file with fetch() is sufficient for demo purposes.
+| # | Requirement |
+|---|-------------|
+| 1 | Accept trip parameters: city, start date, number of days, number of people, theme, travel type, budget tier, total budget. |
+| 2 | Fetch live places (attractions, hotels, restaurants) from Google Maps. |
+| 3 | Use OpenAI to select, rank, and schedule places into a day-by-day itinerary. |
+| 4 | Respect user budget: hotel cost + activity cost must not exceed total_budget. |
+| 5 | Avoid duplicate attractions across days. |
+| 6 | Insert breakfast, lunch, and dinner on each day when feasible. |
+| 7 | Return structured JSON via FastAPI POST endpoint. |
+| 8 | Expose a working demo frontend (existing static/index.html is acceptable). |
+| 9 | Include a CLI runner for local testing. |
+
+### Constraints
+
+- OpenAI must be called **once per day** of the trip (not once per place). This keeps token usage and latency reasonable.
+- Google Place Details must be fetched **only once per place** (fix the current double-fetch bug).
+- If any external API call fails, the system must degrade gracefully — return partial results, not a 500 error.
+- All API keys must be read from `.env`. No hardcoded keys anywhere.
+
+### Out of scope for this rebuild
+
+- Multi-city itineraries.
+- Real-time flight or hotel booking.
+- User authentication or persistent user data.
 
 ---
 
-## Project Structure
+## 3. Technical Stack
 
-```
-wanderwise/
-├── app.py                  # FastAPI entry point — POST /api/generate-itinerary
-├── main.py                 # CLI runner for local testing
-├── .env                    # API keys (never commit this)
-├── .env.example            # Template for environment variables
-├── requirements.txt        # Python dependencies
-├── docs/
-│   ├── ALGORITHM.md        # Fixed algorithm reference — do not modify
-│   ├── AGENTS.md           # This file
-│   └── PLAN.md             # Phase-by-phase execution plan
-├── core/
-│   ├── filter.py           # POI scoring, hotel ranking, cost estimation
-│   └── optimizer.py        # Greedy schedule construction
-├── providers/
-│   └── google_maps.py      # All Google Maps API wrappers
-├── models/
-│   └── schemas.py          # Pydantic request/response models
-└── tests/
-    ├── test_filter.py
-    ├── test_optimizer.py
-    └── test_api.py
+| Layer | Technology |
+|-------|-----------|
+| Language | Python 3.11+ |
+| API Framework | FastAPI |
+| ASGI Server | Uvicorn |
+| HTTP Client | `httpx` (async) — replace current `requests` |
+| AI Provider | OpenAI Python SDK (`openai>=1.0`) |
+| Maps Provider | Google Maps (Places Text Search, Place Details, Distance Matrix) |
+| Data Validation | Pydantic v2 |
+| Config | `python-dotenv` |
+| Testing | `pytest`, `pytest-asyncio`, FastAPI `TestClient` |
+| Frontend | Existing `static/index.html` (minimal changes only) |
+
+### New environment variables required
+
+```env
+GOOGLE_MAPS_API_KEY=your_google_maps_key
+OPENAI_API_KEY=your_openai_key
 ```
 
 ---
 
-## Implementation Strategy
-
-Follow this order strictly. Do not skip steps.
-
-### Step 1 — Environment Setup
-- Create the project directory structure above
-- Create `.env.example` with `GOOGLE_MAPS_API_KEY=your_key_here`
-- Create `requirements.txt` with: fastapi, uvicorn, requests, python-dotenv, pydantic
-
-### Step 2 — Google Maps Provider (`providers/google_maps.py`)
-- Implement `fetch_places(city, place_type, limit)` using Places API
-- Implement `fetch_place_details(place_id)` to get opening hours and image reference
-- Implement `fetch_travel_time(origin_lat, origin_lng, dest_lat, dest_lng, departure_time)` using Distance Matrix API
-- Implement `build_image_url(photo_reference)` to return a usable image URL
-- All functions must return plain Python dicts
-
-### Step 3 — Scoring Engine (`core/filter.py`)
-Implement exactly as specified in `docs/ALGORITHM.md`. Do not deviate.
-
-- `rank_places(places, theme, budget_tier)` — weighted score: `(rating * 10) + theme_bonus - budget_penalty`
-- `rank_hotels(hotels, poi_centroid)` — score: `(rating * 20) - (euclidean_distance * 1000)`
-- `get_item_cost(price_level, people, category)` — use fixed price_map and hotel_price_map from ALGORITHM.md
-
-### Step 4 — Optimizer (`core/optimizer.py`)
-Implement exactly as specified in `docs/ALGORITHM.md`. Do not deviate.
-
-- `optimize_schedule(ranked_pois, restaurants, hotel, start_time, deadline, total_budget, people, date, fetch_travel_time_fn)`
-- Loop greedily: check lunch window → scan ranked POIs → pick first feasible → advance state
-- Return list of itinerary entries with arrival_time, departure_time, travel_time_from_previous, cost
-
-### Step 5 — API Layer (`app.py`)
-- FastAPI app with `POST /api/generate-itinerary`
-- Parse request using Pydantic model
-- Orchestrate: fetch → rank → select hotel → build schedule → return JSON
-- Add `GET /health` endpoint returning `{"status": "ok"}`
-
-### Step 6 — CLI Runner (`main.py`)
-- Accept arguments or use hardcoded defaults for quick local testing
-- Print per-day itinerary and total expenditure to stdout
-
-### Step 7 — Tests (`tests/`)
-- Unit test `rank_places` with mock POI data
-- Unit test `rank_hotels` with mock hotel + centroid data
-- Unit test `optimize_schedule` with mocked travel-time function
-- Integration test the `/api/generate-itinerary` endpoint with a mock Google Maps provider
-
----
-
-## Coding Standards
-
-- Keep every function short and single-purpose
-- Use type hints on all function signatures
-- Use Pydantic models for all API request and response shapes
-- Never hardcode API keys — always load from `.env`
-- Return plain dicts or Pydantic models from all functions — no custom class hierarchies
-- Do not add authentication, databases, caching, or queues to the MVP
-- Do not build a complex frontend — a minimal HTML page with a form and fetch() is enough
-- All planning and working documents live in the `docs/` directory
-- Follow the algorithm in `docs/ALGORITHM.md` exactly — no modifications to scoring logic or optimizer loop
-
----
-
-## Environment Variables
+## 4. System Architecture
 
 ```
-GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+User Request
+    │
+    ▼
+FastAPI  (app.py)
+    │
+    ├─► Google Maps Provider  (providers/google_maps.py)
+    │       • fetch_places()          — text search, ONE detail fetch per place
+    │       • fetch_travel_time()     — distance matrix
+    │       • build_image_url()       — photo reference → URL
+    │
+    ├─► AI Planner            (core/ai_planner.py)   ← NEW FILE
+    │       • plan_day()              — calls OpenAI once per day
+    │       • build_system_prompt()   — constructs context-rich prompt
+    │       • parse_ai_response()     — extracts structured JSON from GPT reply
+    │
+    ├─► Budget Guard          (core/budget.py)        ← NEW FILE
+    │       • reserve_hotel_budget()
+    │       • allocate_daily_budget()
+    │       • check_within_budget()
+    │
+    └─► Schemas               (models/schemas.py)
+            • ItineraryRequest
+            • ItineraryResponse
+            • DayPlan, ItineraryEntry, HotelResponse, SummaryResponse
+```
+
+### Data flow per request
+
+```
+1. Validate request via Pydantic.
+2. Fetch hotel candidates from Google Maps → pick best by rating + location centrality.
+3. Reserve hotel cost from total budget.
+4. Fetch attractions (20) and restaurants (15) from Google Maps — ONE detail call per place.
+5. For each day:
+   a. Filter out already-visited attraction IDs.
+   b. Call OpenAI once with: place list, user preferences, remaining budget, day number, travel type.
+   c. OpenAI returns a structured JSON schedule for that day (attractions + meals + times).
+   d. Validate and post-process the AI response.
+   e. Mark chosen attractions as visited.
+6. Assemble ItineraryResponse and return.
 ```
 
 ---
 
-## Running the Application
+## 5. Key Files and Their Roles
 
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Start API server
-uvicorn app:app --reload --port 8000
-
-# Run CLI demo
-python main.py
-
-# Run tests
-pytest tests/
-```
+| File | Role |
+|------|------|
+| `app.py` | FastAPI app, CORS, static mount, orchestration of providers + AI planner |
+| `main.py` | CLI entry point — reuses `build_itinerary()` from app.py |
+| `providers/google_maps.py` | All Google Maps API calls (fix double-fetch here) |
+| `core/ai_planner.py` | **NEW** — OpenAI integration, prompt building, response parsing |
+| `core/budget.py` | **NEW** — All budget math extracted into one place |
+| `core/filter.py` | Keep hotel selection logic (`rank_hotels`). Remove attraction ranking (OpenAI handles it). |
+| `core/optimizer.py` | **DELETE or stub out** — OpenAI replaces the greedy optimizer |
+| `models/schemas.py` | Pydantic models — add `ai_justification` field to `ItineraryEntry` |
+| `static/index.html` | Existing frontend — update only if needed for new fields |
+| `tests/` | Update tests to mock OpenAI alongside Google Maps |
+| `docs/` | All planning documents go here |
 
 ---
 
-## API Contract
+## 6. Implementation Strategy
 
-### POST /api/generate-itinerary
+Follow `PLAN.md` strictly, one phase at a time. Do not skip phases.
 
-**Request Body:**
+### Phase order summary
+
+1. Fix Google Maps provider (eliminate double-fetch, add error handling).
+2. Build the AI Planner module (`core/ai_planner.py`).
+3. Build the Budget Guard module (`core/budget.py`).
+4. Refactor `app.py` orchestration to use AI Planner + Budget Guard.
+5. Update schemas for new fields (`ai_justification`, meal entries).
+6. Update and run the full test suite.
+7. Verify end-to-end with a real API call.
+
+### OpenAI prompt design (critical)
+
+The prompt sent to OpenAI for each day must include:
+
+- Trip context: city, theme, travel_type, num_people, budget_tier.
+- Day context: day number, date, remaining budget for the day.
+- Available places: a compact JSON list of candidates with name, rating, types, opening_hours summary, estimated cost, coordinates.
+- Already-visited attraction IDs (to prevent duplicates).
+- Explicit instruction to return **only valid JSON** matching a defined schema.
+
+The response schema OpenAI must return:
+
 ```json
 {
-  "city": "Mysuru",
-  "trip_start_date": "2025-08-10",
-  "num_days": 2,
-  "num_people": 2,
-  "theme": "Historical",
-  "travel_type": "Couple",
-  "budget_tier": "Medium",
-  "total_budget": 8000
-}
-```
-
-**Response:**
-```json
-{
-  "hotel": {
-    "name": "Hotel Example",
-    "address": "...",
-    "rating": 4.2,
-    "cost_per_night": 5000,
-    "image_url": "https://..."
-  },
-  "days": [
+  "schedule": [
     {
-      "day": 1,
-      "date": "2025-08-10",
-      "itinerary": [
-        {
-          "location_name": "Mysore Palace",
-          "category": "Attraction",
-          "arrival_time": "09:00",
-          "departure_time": "11:00",
-          "travel_time_from_previous": 15,
-          "cost": 700,
-          "image_url": "https://..."
-        },
-        {
-          "location_name": "Hotel Dasaprakash",
-          "category": "Restaurant",
-          "meal_type": "Lunch",
-          "arrival_time": "13:00",
-          "departure_time": "14:00",
-          "travel_time_from_previous": 10,
-          "cost": 400,
-          "image_url": "https://..."
-        }
-      ],
-      "day_cost": 3200
+      "place_id": "...",
+      "location_name": "...",
+      "category": "Attraction | Restaurant | Hotel",
+      "meal_type": "Breakfast | Lunch | Dinner | null",
+      "arrival_time": "HH:MM",
+      "departure_time": "HH:MM",
+      "cost": 0,
+      "ai_justification": "One sentence explaining why this was chosen."
     }
   ],
-  "summary": {
-    "total_cost": 6400,
-    "budget_limit": 8000,
-    "within_budget": true
-  }
+  "day_summary": "One sentence overview of the day."
 }
 ```
 
+Use OpenAI's `response_format: { type: "json_object" }` to enforce JSON output.
+
+### Error handling rules
+
+- If OpenAI returns malformed JSON → log the error, return an empty schedule for that day with a warning message.
+- If a Google Maps call fails → log the error, skip that place, continue.
+- If budget is exhausted → stop scheduling further days, return what was built with `within_budget: false`.
+- Never raise an unhandled exception to the user. Always return a valid (possibly partial) `ItineraryResponse`.
+
 ---
 
-## Notes for AI Coding Agents
+## 7. Coding Standards
 
-- The algorithm in `docs/ALGORITHM.md` is the source of truth for `core/filter.py` and `core/optimizer.py`
-- Do not introduce ML models, LLMs, or external ranking services
-- Do not change scoring weights or optimizer loop logic
-- When in doubt, refer to `docs/ALGORITHM.md` and `docs/PLAN.md`
-- Complete one phase at a time and verify tests before moving to the next phase
+- **Keep every function under 40 lines.** Extract helpers aggressively.
+- **No hardcoded strings** for API endpoints, model names, or prompt text. Use module-level constants.
+- **Single responsibility** — one module, one job. The AI planner does not touch budgets. The budget module does not call APIs.
+- **No double API calls.** `fetch_places` must be the only place that calls `fetch_place_details`. `app.py` must not call `_merge_place_details` on top of already-enriched places.
+- **Use `httpx` instead of `requests`** for consistency with FastAPI's async model.
+- **Use Pydantic v2 `model_validate`** not deprecated `parse_obj`.
+- **All secrets from `.env` only.** Load once at startup, not at import time inside every function.
+- **Type hints on every function signature.**
+- **Do not over-engineer the frontend.** The existing `static/index.html` is acceptable. Add new fields (justification, day summary) to the rendered output only.
+- Planning and working documents must be stored in the `docs/` directory. Do not duplicate them at the repository root.
+
+---
+
+## 8. Testing Standards
+
+- Every new module (`ai_planner.py`, `budget.py`) must have a corresponding test file.
+- OpenAI calls must be **mocked** in tests — never hit the real API in automated tests.
+- Google Maps calls must remain mocked as they currently are.
+- The `test_api.py` integration test must continue to pass with the new orchestration.
+- New tests required:
+  - `tests/test_ai_planner.py` — mock OpenAI, verify prompt construction and response parsing.
+  - `tests/test_budget.py` — verify hotel reservation, daily allocation, and within-budget check.
+
+---
+
+## 9. Acceptance Criteria
+
+The rebuild is complete when:
+
+- `POST /api/generate-itinerary` returns a valid `ItineraryResponse` with at least one day scheduled.
+- The itinerary includes at least one meal entry per day.
+- No attraction appears on more than one day.
+- Total cost does not exceed `total_budget`.
+- `ai_justification` is populated on every `ItineraryEntry`.
+- `pytest tests/ -q` passes with all tests green.
+- The demo frontend renders the full response including justifications.
+- No Google API call is made more than once per place per request.

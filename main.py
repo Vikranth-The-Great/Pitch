@@ -21,14 +21,14 @@ def _parse_args() -> argparse.Namespace:
 
 
 def _format_day(day) -> None:
-    print(f"\n=== Day {day.day} — {day.date} ===")
+    print(f"\n=== Day {day.day} - {day.date} ===")
     for entry in day.itinerary:
-        meal_label = f"{entry.meal_type.upper()} — " if entry.meal_type else ""
+        meal_label = f"{entry.meal_type.upper()} - " if entry.meal_type else ""
         print(
-            f"{entry.arrival_time} → {entry.departure_time}  {meal_label}{entry.location_name}"
-            f"   ₹{entry.cost}   [Travel: {entry.travel_time_from_previous} min]"
+            f"{entry.arrival_time} -> {entry.departure_time}  {meal_label}{entry.location_name}"
+            f"   Rs{entry.cost}   [Travel: {entry.travel_time_from_previous} min]"
         )
-    print(f"Day {day.day} Total: ₹{day.day_cost}")
+    print(f"Day {day.day} Total: Rs{day.day_cost}")
 
 
 def run_wanderwise() -> None:
@@ -46,11 +46,11 @@ def run_wanderwise() -> None:
     response = build_itinerary(payload)
 
     print(
-        f"Hotel: {response.hotel.name} (Rating: {response.hotel.rating}) — ₹{response.hotel.cost_per_night}/night"
+        f"Hotel: {response.hotel.name} (Rating: {response.hotel.rating}) - Rs{response.hotel.cost_per_night}/night"
     )
     for day in response.days:
         _format_day(day)
-    print(f"\nTrip Total: ₹{response.summary.total_cost} / ₹{response.summary.budget_limit} budget")
+    print(f"\nTrip Total: Rs{response.summary.total_cost} / Rs{response.summary.budget_limit} budget")
 
 
 if __name__ == "__main__":

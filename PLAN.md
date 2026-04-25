@@ -1,527 +1,528 @@
-# PLAN.md — WanderWise Execution Plan
+# PLAN.md — WanderWise AI Rebuild Execution Plan
 
-> This is the single source of truth for development execution.
-> AI coding agents must implement one phase at a time, run all tests, verify success criteria, then proceed.
-> Never skip a phase. Never implement the next phase until the current phase passes all success criteria.
+> **Master execution plan. AI coding agents must follow phases in order. Never skip a phase.**
+> Read `AGENTS.md` before starting. Present this plan to the user and wait for approval before implementing.
 
 ---
 
 ## Project Summary
 
-WanderWise generates a practical, multi-day travel itinerary for a given city using Google Maps APIs,
-a weighted heuristic POI scoring algorithm, a centrality-based hotel selection algorithm,
-and a greedy first-feasible schedule optimizer.
+Replace WanderWise's broken rule-based optimizer with an OpenAI-powered planning engine.
+Google Maps continues to supply live place data. OpenAI becomes the intelligence layer that
+constructs coherent, human-quality itineraries per day.
 
-The algorithm is fixed and documented in `docs/ALGORITHM.md`. Do not modify it.
-
----
-
-## Phase Overview
-
-| Phase | Name                        | Key Output                              |
-|-------|-----------------------------|-----------------------------------------|
-| 1     | Project Setup               | Repo structure, env config, deps        |
-| 2     | Google Maps Provider        | Live API wrappers working               |
-| 3     | Scoring Engine              | rank_places and rank_hotels working     |
-| 4     | Cost Model                  | get_item_cost working                   |
-| 5     | Schedule Optimizer          | optimize_schedule working               |
-| 6     | API Layer                   | POST /api/generate-itinerary live       |
-| 7     | CLI Runner                  | main.py demo working end-to-end         |
-| 8     | Multi-Day Support           | num_days loop across days               |
-| 9     | Unit Tests                  | All core logic tested                   |
-| 10    | Integration Tests           | Full API flow tested with mocks         |
-| 11    | Demo Frontend               | Minimal HTML form hitting the API       |
-| 12    | Final Review & Cleanup      | Code clean, docs updated, ready to demo |
+**Two new API keys required:** `GOOGLE_MAPS_API_KEY` (existing) and `OPENAI_API_KEY` (new).
 
 ---
 
-## Phase 1 — Project Setup
+## Execution Rules
+
+1. Implement one phase at a time. Run the tests for that phase before moving to the next.
+2. If a phase's tests fail, fix the issue before proceeding.
+3. Never implement Phase N+1 while Phase N is broken.
+4. Log every OpenAI prompt and response to the console during development (remove before final demo).
+5. Keep all planning documents in `docs/`. Do not create duplicate files at the repository root.
+
+---
+
+## Phase 1 — Environment and Dependency Upgrade
 
 ### Objective
-Create the project skeleton with correct directory structure, dependencies, and environment configuration.
+Bring the project environment up to date and add the OpenAI SDK. Fix the `.env` configuration.
 
 ### Tasks
-- [ ] Create the following directory structure:
-  ```
-  wanderwise/
-  ├── app.py
-  ├── main.py
-  ├── requirements.txt
-  ├── .env.example
-  ├── docs/
-  │   ├── ALGORITHM.md
-  │   ├── AGENTS.md
-  │   └── PLAN.md
-  ├── core/
-  │   ├── __init__.py
-  │   ├── filter.py
-  │   └── optimizer.py
-  ├── providers/
-  │   ├── __init__.py
-  │   └── google_maps.py
-  ├── models/
-  │   ├── __init__.py
-  │   └── schemas.py
-  └── tests/
-      ├── __init__.py
-      ├── test_filter.py
-      ├── test_optimizer.py
-      └── test_api.py
-  ```
-- [ ] Create `requirements.txt` containing:
-  ```
-  fastapi
-  uvicorn
-  requests
-  python-dotenv
-  pydantic
-  pytest
-  httpx
-  ```
-- [ ] Create `.env.example`:
-  ```
-  GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
-  ```
-- [ ] Create `.env` locally with a real key (never commit this file)
-- [ ] Add `.env` to `.gitignore`
-- [ ] Create empty `__init__.py` files in `core/`, `providers/`, `models/`, `tests/`
-- [ ] Copy `ALGORITHM.md` into `docs/ALGORITHM.md`
-- [ ] Install dependencies: `pip install -r requirements.txt`
 
-### Test
+- [ ] Add `openai>=1.0` and `httpx` to `requirements.txt`. Remove bare `requests` (replaced by `httpx`).
+- [ ] Update `.env.example` to include both keys:
+  ```
+  GOOGLE_MAPS_API_KEY=your_google_maps_key_here
+  OPENAI_API_KEY=your_openai_key_here
+  ```
+- [ ] Add `OPENAI_API_KEY` loading to `app.py` startup (alongside the existing Google key).
+- [ ] Confirm the virtual environment can be created cleanly:
+  ```bash
+  python -m venv .venv
+  source .venv/bin/activate   # Windows: .venv\Scripts\activate
+  pip install -r requirements.txt
+  ```
+- [ ] Run `uvicorn app:app --reload --port 8000` and verify `GET /health` returns `{"status": "ok"}`.
+
+### Tests
+
 ```bash
-python -c "import fastapi, pydantic, requests, dotenv; print('All imports OK')"
+curl http://localhost:8000/health
+# Expected: {"status":"ok"}
 ```
 
 ### Success Criteria
-- All directories and files exist
-- `pip install -r requirements.txt` completes without errors
-- Import test passes
+
+- `requirements.txt` contains `openai`, `httpx`, `fastapi`, `uvicorn`, `pydantic`, `python-dotenv`, `pytest`, `pytest-asyncio`.
+- Server starts without import errors.
+- `/health` returns 200.
 
 ---
 
-## Phase 2 — Google Maps Provider
+## Phase 2 — Fix the Google Maps Provider
 
 ### Objective
-Implement all Google Maps API wrappers in `providers/google_maps.py`.
+Eliminate the double-fetch bug. Each place must call `fetch_place_details` exactly once.
+Add proper error handling so a failed API call does not crash the whole request.
 
 ### Tasks
-- [ ] Load `GOOGLE_MAPS_API_KEY` from `.env` using `python-dotenv`
-- [ ] Implement `fetch_places(city: str, place_type: str, limit: int) -> list[dict]`
-  - Uses Google Places API (Text Search or Nearby Search)
-  - Returns list of dicts with: place_id, name, rating, price_level, lat, lng, types
-- [ ] Implement `fetch_place_details(place_id: str) -> dict`
-  - Uses Google Place Details API
-  - Returns: opening_hours (periods), photo_reference, address, price_level
-- [ ] Implement `fetch_travel_time(origin_lat, origin_lng, dest_lat, dest_lng, departure_epoch: int) -> int`
-  - Uses Google Distance Matrix API
-  - Returns travel time in minutes
-  - Falls back to 15 minutes if API fails or quota exceeded
-- [ ] Implement `build_image_url(photo_reference: str, max_width: int = 400) -> str`
-  - Returns a Google Places photo URL string
-- [ ] Implement `is_open_at(opening_periods: list, target_datetime) -> bool`
-  - Checks if a place is open at a given datetime using the periods array from Place Details
 
-### Test
-```python
-# Manual smoke test (requires real API key)
-from providers.google_maps import fetch_places
-places = fetch_places("Mysuru", "tourist_attraction", 5)
-assert len(places) > 0
-assert "place_id" in places[0]
-print("Provider smoke test passed")
-```
+- [ ] Open `providers/google_maps.py`.
+- [ ] In `fetch_places()`, confirm it already calls `fetch_place_details()` for each result. It does — this is the **only** place that should call it.
+- [ ] Open `app.py`. Find `_merge_place_details()`. **Remove all calls to this function.** The places returned by `fetch_places()` are already fully enriched.
+- [ ] Delete the `_merge_place_details()` function from `app.py`.
+- [ ] Wrap `fetch_place_details()` in a try/except. On failure, log the error and return a minimal dict with just `place_id` and `name`.
+- [ ] Wrap `fetch_places()` in a try/except. On failure, log the error and return an empty list.
+- [ ] Wrap `fetch_travel_time()` — it already has a fallback, but ensure it never raises.
+- [ ] Replace `import requests` with `import httpx` in the provider file. Update `_request_json()` to use `httpx.get()`.
+- [ ] Verify the provider still works by hitting `POST /api/generate-itinerary` with a real key and a simple city like `Mysuru`. Confirm the response contains places.
+
+### Tests
+
+- [ ] Run existing `tests/test_api.py` — it must still pass (provider calls are mocked there).
+- [ ] Manually confirm no duplicate API calls appear in server logs.
 
 ### Success Criteria
-- `fetch_places("Mysuru", "tourist_attraction", 5)` returns at least 3 results
-- `fetch_travel_time(...)` returns an integer (minutes)
-- `is_open_at(...)` returns True or False correctly for a known open place
+
+- `_merge_place_details` no longer exists in `app.py`.
+- Each place triggers exactly one `fetch_place_details` call per request.
+- `requests` is no longer imported anywhere; `httpx` is used instead.
+- All existing provider-level tests pass.
 
 ---
 
-## Phase 3 — Scoring Engine
+## Phase 3 — Build the Budget Guard Module
 
 ### Objective
-Implement `rank_places` and `rank_hotels` in `core/filter.py` exactly as defined in `docs/ALGORITHM.md`.
+Extract all budget arithmetic into a single, testable module: `core/budget.py`.
 
 ### Tasks
 
-#### rank_places
-- [ ] Implement `rank_places(places: list[dict], theme: str, budget_tier: str) -> list[dict]`
-- [ ] Define theme_map mapping each theme to a list of Google place types:
-  - Historical: ["museum", "hindu_temple", "church", "mosque", "tourist_attraction"]
-  - Devotional: ["hindu_temple", "church", "mosque", "place_of_worship"]
-  - Adventure: ["park", "natural_feature", "campground", "zoo", "amusement_park"]
-  - Entertainment: ["amusement_park", "zoo", "movie_theater", "shopping_mall", "night_club"]
-- [ ] Apply scoring formula exactly:
-  ```
-  base_score = rating * 10
-  theme_bonus = 50 if any(t in theme_map[theme] for t in poi["types"]) else 0
-  budget_penalty = 40 if budget_tier == "Low" and poi.get("price_level", 0) > 2 else 0
-  score = base_score + theme_bonus - budget_penalty
-  ```
-- [ ] Sort POIs descending by score
-- [ ] Attach `wanderwise_score` field to each POI dict
+- [ ] Create `core/budget.py`.
+- [ ] Implement these functions:
 
-#### rank_hotels
-- [ ] Implement `rank_hotels(hotels: list[dict], sample_pois: list[dict]) -> dict`
-- [ ] Compute centroid of top sample POIs:
   ```python
-  avg_lat = mean(poi["lat"] for poi in sample_pois)
-  avg_lng = mean(poi["lng"] for poi in sample_pois)
+  def reserve_hotel_budget(cost_per_night: int, num_days: int) -> int:
+      """Returns total hotel cost for the trip."""
+
+  def allocate_daily_budget(
+      total_budget: int,
+      hotel_total: int,
+      accumulated_activity_cost: int,
+      num_days: int,
+      current_day_index: int,
+  ) -> int:
+      """Returns the budget available for the current day's activities."""
+
+  def check_within_budget(total_cost: int, budget_limit: int) -> bool:
+      """Returns True if total_cost <= budget_limit."""
   ```
-- [ ] For each hotel compute:
-  ```python
-  from math import sqrt
-  distance = sqrt((hotel["lat"] - avg_lat)**2 + (hotel["lng"] - avg_lng)**2)
-  hotel_score = (hotel["rating"] * 20) - (distance * 1000)
-  ```
-- [ ] Return the hotel dict with the highest `hotel_score`
 
-### Test (`tests/test_filter.py`)
-```python
-def test_rank_places_theme_bonus():
-    pois = [
-        {"name": "Palace", "rating": 4.0, "price_level": 1, "types": ["tourist_attraction"]},
-        {"name": "Mall", "rating": 4.5, "price_level": 3, "types": ["shopping_mall"]},
-    ]
-    ranked = rank_places(pois, theme="Historical", budget_tier="Medium")
-    assert ranked[0]["name"] == "Palace"  # theme bonus pushes it ahead
+- [ ] Import and use these functions in `app.py` — remove all inline budget arithmetic from `build_itinerary()`.
+- [ ] Create `tests/test_budget.py` with the following cases:
+  - Hotel total is `cost_per_night * num_days`.
+  - Daily budget decreases correctly as activity cost accumulates.
+  - Daily budget never goes negative (return 0 if overspent).
+  - `check_within_budget` returns True/False correctly.
 
-def test_rank_hotels_centrality():
-    hotels = [
-        {"name": "Central Hotel", "rating": 4.0, "lat": 12.30, "lng": 76.65},
-        {"name": "Far Hotel",     "rating": 4.5, "lat": 12.50, "lng": 77.00},
-    ]
-    sample_pois = [{"lat": 12.30, "lng": 76.65}]
-    best = rank_hotels(hotels, sample_pois)
-    assert best["name"] == "Central Hotel"
-```
+### Tests
 
-### Success Criteria
-- `test_rank_places_theme_bonus` passes
-- `test_rank_hotels_centrality` passes
-- Scores match the formula from `docs/ALGORITHM.md` exactly
-
----
-
-## Phase 4 — Cost Model
-
-### Objective
-Implement `get_item_cost` in `core/filter.py` using the fixed price maps from `docs/ALGORITHM.md`.
-
-### Tasks
-- [ ] Implement `get_item_cost(price_level: int, people: int, category: str) -> int`
-- [ ] Use these maps exactly (do not change values):
-  ```python
-  price_map       = {0: 0, 1: 300, 2: 700, 3: 1500, 4: 3000}
-  hotel_price_map = {0: 0, 1: 2500, 2: 5000, 3: 10000, 4: 20000}
-  ```
-- [ ] If `category == "hotel"`, use `hotel_price_map[price_level]` (flat, not per-person)
-- [ ] Otherwise use `price_map[price_level] * people`
-- [ ] Default `price_level` to 1 if None or missing
-
-### Test (`tests/test_filter.py`)
-```python
-def test_get_item_cost_attraction():
-    cost = get_item_cost(price_level=2, people=2, category="attraction")
-    assert cost == 1400  # 700 * 2
-
-def test_get_item_cost_hotel():
-    cost = get_item_cost(price_level=2, people=2, category="hotel")
-    assert cost == 5000  # flat rate from hotel_price_map
-```
-
-### Success Criteria
-- Both cost tests pass
-- Default fallback for None price_level does not raise an exception
-
----
-
-## Phase 5 — Schedule Optimizer
-
-### Objective
-Implement `optimize_schedule` in `core/optimizer.py` exactly as defined in `docs/ALGORITHM.md`.
-
-### Tasks
-- [ ] Implement `optimize_schedule(ranked_pois, restaurants, hotel, start_time, deadline, total_budget, people, target_date, fetch_travel_time_fn) -> list[dict]`
-- [ ] Maintain state: `current_time`, `current_lat`, `current_lng`, `running_cost`, `visited_ids`
-- [ ] Implement greedy loop:
-  ```
-  while current_time < deadline:
-      if current_time.hour >= 13 and not lunch_taken:
-          insert restaurant as lunch slot
-          advance time and cost
-          set lunch_taken = True
-          continue
-      for poi in ranked_pois:
-          if poi already visited: skip
-          travel_minutes = fetch_travel_time_fn(current_lat, current_lng, poi.lat, poi.lng, departure_epoch)
-          arrival = current_time + timedelta(minutes=travel_minutes)
-          if not is_open_at(poi.opening_hours, arrival): skip
-          poi_cost = get_item_cost(poi.price_level, people, "attraction")
-          if running_cost + poi_cost > total_budget: skip
-          visit_duration = poi.get("visit_duration_minutes", 90)
-          if arrival + timedelta(minutes=visit_duration) > deadline: skip
-          # feasible — add to itinerary
-          append entry with arrival_time, departure_time, travel_time_from_previous, cost
-          advance current_time, current_lat, current_lng, running_cost
-          mark poi visited
-          break
-      else:
-          break  # no feasible POI found — stop
-  return itinerary
-  ```
-- [ ] Each itinerary entry dict must include:
-  - location_name, category, arrival_time (HH:MM), departure_time (HH:MM), travel_time_from_previous (int minutes), cost (int INR), image_url
-
-### Test (`tests/test_optimizer.py`)
-```python
-def mock_travel_fn(olat, olng, dlat, dlng, epoch):
-    return 10  # always 10 minutes
-
-def test_optimize_schedule_basic():
-    pois = [
-        {"place_id": "p1", "name": "Palace", "rating": 4.5, "price_level": 1,
-         "lat": 12.30, "lng": 76.65, "types": ["tourist_attraction"],
-         "opening_hours": None, "image_url": "", "visit_duration_minutes": 90},
-    ]
-    restaurants = [
-        {"place_id": "r1", "name": "Dasaprakash", "price_level": 1,
-         "lat": 12.31, "lng": 76.66, "image_url": ""},
-    ]
-    from datetime import datetime, timedelta
-    start = datetime(2025, 8, 10, 9, 0)
-    deadline = datetime(2025, 8, 10, 20, 0)
-    result = optimize_schedule(pois, restaurants, {}, start, deadline, 5000, 2, start.date(), mock_travel_fn)
-    assert len(result) >= 1
-    assert result[0]["location_name"] == "Palace"
-```
-
-### Success Criteria
-- Optimizer test passes with mock travel function
-- Lunch is inserted after 13:00
-- Budget cap is never exceeded in any returned itinerary
-- No POI appears twice in the output list
-
----
-
-## Phase 6 — API Layer
-
-### Objective
-Wire everything together in `app.py` as a FastAPI application.
-
-### Tasks
-- [ ] Define Pydantic request model `ItineraryRequest` in `models/schemas.py` with all 8 input fields
-- [ ] Define Pydantic response models for hotel, itinerary entry, day plan, and summary
-- [ ] Implement `GET /health` returning `{"status": "ok"}`
-- [ ] Implement `POST /api/generate-itinerary`:
-  1. Parse and validate request body
-  2. Fetch sample POIs using `fetch_places(city, "tourist_attraction", 10)`
-  3. Fetch hotel candidates using `fetch_places(city, "lodging", 10)`
-  4. Enrich each hotel with place details
-  5. Call `rank_hotels(hotels, sample_pois)` to select best hotel
-  6. Fetch full POI list and restaurant list
-  7. Enrich POIs with place details (opening hours, images)
-  8. Call `rank_places(pois, theme, budget_tier)` to get ranked POIs
-  9. Loop for `num_days`:
-     - Compute `start_time` and `deadline` for that day (09:00 → 20:00)
-     - Call `optimize_schedule(...)` for that day
-     - Accumulate costs
-  10. Return structured JSON response
-
-### Test
 ```bash
-uvicorn app:app --reload &
-curl -X GET http://localhost:8000/health
-# Expected: {"status": "ok"}
+pytest tests/test_budget.py -v
 ```
 
 ### Success Criteria
-- `GET /health` returns `{"status": "ok"}` with HTTP 200
-- `POST /api/generate-itinerary` with valid body returns a JSON response with `hotel`, `days`, and `summary` keys
-- Response `summary.total_cost` never exceeds `total_budget` in the request
+
+- `core/budget.py` exists and is importable.
+- All budget test cases pass.
+- `app.py` no longer contains inline budget math — it calls `budget.py` functions.
 
 ---
 
-## Phase 7 — CLI Runner
+## Phase 4 — Build the AI Planner Module
 
 ### Objective
-Implement `main.py` as a standalone CLI demo for rapid local testing without an HTTP client.
+Create `core/ai_planner.py`. This is the most important new module. It replaces the entire
+`core/optimizer.py` greedy scheduler with an OpenAI-powered planner.
 
 ### Tasks
-- [ ] Accept optional CLI arguments: `--city`, `--days`, `--people`, `--theme`, `--budget_tier`, `--total_budget`, `--start_date`
-- [ ] Fall back to Mysuru defaults if no arguments provided
-- [ ] Call the same core logic used by `app.py` (import and reuse, do not duplicate)
-- [ ] Print each day's itinerary to stdout in a readable format:
+
+- [ ] Create `core/ai_planner.py`.
+- [ ] Implement `build_system_prompt(trip_context: dict) -> str`:
+  - Receives: city, theme, travel_type, num_people, budget_tier.
+  - Returns a system prompt that tells GPT-4o its role and the exact JSON schema it must return.
+  - The schema it must return per day:
+    ```json
+    {
+      "schedule": [
+        {
+          "place_id": "string",
+          "location_name": "string",
+          "category": "Attraction | Restaurant",
+          "meal_type": "Breakfast | Lunch | Dinner | null",
+          "arrival_time": "HH:MM",
+          "departure_time": "HH:MM",
+          "cost": 0,
+          "ai_justification": "string"
+        }
+      ],
+      "day_summary": "string"
+    }
+    ```
+
+- [ ] Implement `build_user_prompt(day_context: dict, places: list, visited_ids: set) -> str`:
+  - Receives: day number, date, remaining_budget, available places (compact list), visited_ids.
+  - Formats places as a concise JSON snippet (name, rating, types, estimated cost, coords).
+  - Instructs the model to avoid any place_id in `visited_ids`.
+  - Instructs the model to insert Breakfast (~08:00), Lunch (~13:00), Dinner (~19:00) using restaurant candidates.
+  - Instructs the model to stay within `remaining_budget`.
+  - Instructs the model to start at 08:00 and end by 21:00.
+  - Instructs the model to return ONLY the JSON object, no prose.
+
+- [ ] Implement `plan_day(system_prompt: str, user_prompt: str, openai_client) -> dict`:
+  - Calls `openai_client.chat.completions.create(...)` with:
+    - `model="gpt-4o"`
+    - `response_format={"type": "json_object"}`
+    - `max_tokens=2000`
+  - Parses the JSON response.
+  - Returns the parsed dict on success.
+  - On any exception (API error, JSON parse error), logs the error and returns `{"schedule": [], "day_summary": "Could not plan this day."}`.
+
+- [ ] Implement `parse_ai_response(raw: dict) -> list[dict]`:
+  - Validates that `raw["schedule"]` is a list.
+  - Returns the schedule list, or `[]` on invalid structure.
+
+- [ ] Add module-level constant: `OPENAI_MODEL = "gpt-4o"`.
+
+### Tests
+
+- [ ] Create `tests/test_ai_planner.py`.
+- [ ] Mock `openai_client.chat.completions.create` using `unittest.mock.MagicMock`.
+- [ ] Test cases:
+  - Valid OpenAI response is parsed correctly into a schedule list.
+  - Malformed JSON from OpenAI returns an empty schedule without raising.
+  - OpenAI API exception returns an empty schedule without raising.
+  - System prompt contains the word "JSON" (sanity check).
+  - User prompt contains the `visited_ids` if provided.
+
+```bash
+pytest tests/test_ai_planner.py -v
+```
+
+### Success Criteria
+
+- `core/ai_planner.py` exists and is importable.
+- All AI planner tests pass with mocked OpenAI.
+- No real OpenAI calls are made in tests.
+
+---
+
+## Phase 5 — Refactor App Orchestration
+
+### Objective
+Wire the new AI Planner and Budget Guard into `app.py`. Remove all references to
+`optimize_schedule` from the old greedy optimizer.
+
+### Tasks
+
+- [ ] Open `app.py`. Refactor `build_itinerary(payload)` with the following logic:
+
   ```
-  === Day 1 — 2025-08-10 ===
-  Hotel: Hotel Roopa (Rating: 4.1) — ₹5000/night
-
-  09:00 → 11:00  Mysore Palace           ₹700   [Travel: 0 min]
-  11:10 → 12:40  Jaganmohan Palace       ₹300   [Travel: 10 min]
-  13:00 → 14:00  LUNCH — Dasaprakash    ₹400   [Travel: 8 min]
-  ...
-
-  Day 1 Total: ₹3200
-  ──────────────────────────────
-  Trip Total:  ₹6100 / ₹8000 budget
+  1. Fetch hotel candidates → select best hotel via rank_hotels() (keep existing logic).
+  2. hotel_cost_total = reserve_hotel_budget(hotel.cost_per_night, num_days)
+  3. Fetch attractions (20 results) — single fetch_places call.
+  4. Fetch restaurants (15 results) — single fetch_places call.
+  5. Build OpenAI client: openai.OpenAI(api_key=OPENAI_API_KEY)
+  6. Build system_prompt via build_system_prompt(trip_context)
+  7. visited_ids = set()
+  8. accumulated_activity_cost = 0
+  9. For each day (0 to num_days-1):
+       a. daily_budget = allocate_daily_budget(...)
+       b. if daily_budget <= 0: append empty DayPlan, continue
+       c. unvisited_pois = [p for p in attractions if p["place_id"] not in visited_ids]
+       d. user_prompt = build_user_prompt(day_context, unvisited_pois + restaurants, visited_ids)
+       e. raw_response = plan_day(system_prompt, user_prompt, openai_client)
+       f. schedule = parse_ai_response(raw_response)
+       g. day_cost = sum(entry["cost"] for entry in schedule)
+       h. accumulated_activity_cost += day_cost
+       i. visited_ids |= {e["place_id"] for e in schedule if e["category"] == "Attraction"}
+       j. Build DayPlan from schedule entries.
+  10. Build and return ItineraryResponse.
   ```
 
-### Test
-```bash
-python main.py --city Mysuru --days 1 --people 2 --theme Historical --budget_tier Medium --total_budget 5000 --start_date 2025-08-10
-```
+- [ ] Remove `from core.optimizer import optimize_schedule` import.
+- [ ] Add imports: `from core.ai_planner import build_system_prompt, build_user_prompt, plan_day, parse_ai_response`
+- [ ] Add imports: `from core.budget import reserve_hotel_budget, allocate_daily_budget, check_within_budget`
+- [ ] Remove `_extract_coords` helper from `app.py` if it's no longer used.
+- [ ] Ensure `_build_day_plan` correctly maps AI schedule entries to `ItineraryEntry` objects.
 
-### Success Criteria
-- CLI prints at least one attraction and one lunch entry
-- Total cost printed is within `total_budget`
-- No unhandled exceptions on valid input
+### Tests
 
----
+- [ ] Update `tests/test_api.py`:
+  - Mock `app_module.plan_day` to return a sample schedule dict.
+  - Keep existing mocks for `fetch_places`, `fetch_travel_time`.
+  - Remove any mock for `optimize_schedule`.
+  - All existing test assertions (budget respected, no duplicates, correct dates) must still pass.
 
-## Phase 8 — Multi-Day Support
-
-### Objective
-Ensure the system correctly handles `num_days > 1`, advancing the date each day and never repeating places.
-
-### Tasks
-- [ ] Maintain a global `visited_ids` set across all days — pass it into each day's optimizer call
-- [ ] Increment the date by 1 for each day (day 1 = `trip_start_date`, day 2 = `trip_start_date + 1 day`, etc.)
-- [ ] Pass the correct date to `optimize_schedule` so opening hours are evaluated for the correct day of the week
-- [ ] If `num_days > 1` and city is a known hub city (e.g., Mysuru), optionally include nearby attractions (e.g., Srirangapatna) on day 2 by fetching places for `"Srirangapatna"` as a secondary city
-- [ ] Running cost accumulates across all days — enforce `total_budget` across the whole trip, not per day
-
-### Test
-```bash
-python main.py --city Mysuru --days 2 --people 2 --theme Historical --budget_tier Medium --total_budget 8000 --start_date 2025-08-10
-```
-
-### Success Criteria
-- Day 2 itinerary contains no place_ids that appeared in Day 1
-- Dates increment correctly (Day 1: 2025-08-10, Day 2: 2025-08-11)
-- Total cost across both days does not exceed `total_budget`
-
----
-
-## Phase 9 — Unit Tests
-
-### Objective
-Write and run all unit tests for `core/filter.py` and `core/optimizer.py`.
-
-### Tasks
-- [ ] Complete `tests/test_filter.py`:
-  - `test_rank_places_theme_bonus` (from Phase 3)
-  - `test_rank_places_budget_penalty`
-  - `test_rank_hotels_centrality` (from Phase 3)
-  - `test_get_item_cost_attraction` (from Phase 4)
-  - `test_get_item_cost_hotel` (from Phase 4)
-  - `test_get_item_cost_default_price_level`
-- [ ] Complete `tests/test_optimizer.py`:
-  - `test_optimize_schedule_basic` (from Phase 5)
-  - `test_optimize_schedule_lunch_inserted_after_1pm`
-  - `test_optimize_schedule_budget_cap_respected`
-  - `test_optimize_schedule_no_duplicates`
-
-### Test
-```bash
-pytest tests/test_filter.py tests/test_optimizer.py -v
-```
-
-### Success Criteria
-- All unit tests pass
-- No test uses a real Google Maps API call — all external calls are mocked
-
----
-
-## Phase 10 — Integration Tests
-
-### Objective
-Test the full API flow using FastAPI's test client with a mocked Google Maps provider.
-
-### Tasks
-- [ ] In `tests/test_api.py`, mock `providers.google_maps` to return fixture data
-- [ ] Write `test_health_endpoint` — assert 200 and `{"status": "ok"}`
-- [ ] Write `test_generate_itinerary_valid_request` — assert response has `hotel`, `days`, `summary`
-- [ ] Write `test_generate_itinerary_budget_respected` — assert `summary.total_cost <= total_budget`
-- [ ] Write `test_generate_itinerary_no_duplicate_places` — assert all place_ids in the itinerary are unique
-
-### Test
 ```bash
 pytest tests/test_api.py -v
 ```
 
 ### Success Criteria
-- All integration tests pass without hitting real Google Maps APIs
-- `summary.total_cost <= total_budget` assertion passes
-- No duplicate place_ids in any response
+
+- `app.py` no longer imports from `core.optimizer`.
+- `build_itinerary()` uses `plan_day()` for every day's schedule.
+- All `test_api.py` tests pass.
+- Server starts and `/health` returns 200.
 
 ---
 
-## Phase 11 — Demo Frontend
+## Phase 6 — Update Pydantic Schemas
 
 ### Objective
-Build a minimal single HTML file that lets a user submit the itinerary form and see results — no framework needed.
+Add new fields to the response schema to surface AI-generated content to the frontend.
 
 ### Tasks
-- [ ] Create `static/index.html`
-- [ ] Add a simple HTML form with fields matching all 8 inputs (city, start_date, num_days, num_people, theme dropdown, travel_type dropdown, budget_tier dropdown, total_budget)
-- [ ] On form submit, call `POST /api/generate-itinerary` using `fetch()`
-- [ ] Display results as a plain readable list: hotel name, then each day's itinerary entries with times and costs
-- [ ] Mount the static directory in `app.py` using FastAPI's `StaticFiles`
-- [ ] No CSS framework required — inline styles are acceptable
 
-### Test
-```
-1. Open http://localhost:8000/static/index.html in a browser
-2. Fill in: Mysuru, 2025-08-10, 1 day, 2 people, Historical, Couple, Medium, 5000
-3. Click Generate
-4. Verify itinerary appears on page
-```
+- [ ] Open `models/schemas.py`.
+- [ ] Add `ai_justification: str | None = None` to `ItineraryEntry`.
+- [ ] Add `day_summary: str | None = None` to `DayPlan`.
+- [ ] Add `meal_type` validation — it already exists, but confirm it accepts `"Breakfast"`, `"Lunch"`, `"Dinner"`, and `None`.
+- [ ] Confirm `theme`, `travel_type`, and `budget_tier` remain plain strings (no enum needed for MVP).
+- [ ] Run a quick schema import test:
+  ```bash
+  python -c "from models.schemas import ItineraryResponse; print('OK')"
+  ```
+
+### Tests
+
+- [ ] Add two test cases to `tests/test_ai_planner.py`:
+  - Confirm `ItineraryEntry` accepts `ai_justification` without error.
+  - Confirm `DayPlan` accepts `day_summary` without error.
 
 ### Success Criteria
-- Form renders in browser without errors
-- Clicking Generate shows at least one attraction entry and one restaurant entry
-- No JavaScript console errors on submit
+
+- `ItineraryEntry` has `ai_justification`.
+- `DayPlan` has `day_summary`.
+- No schema validation errors when building a full `ItineraryResponse`.
 
 ---
 
-## Phase 12 — Final Review and Cleanup
+## Phase 7 — Update the Frontend
 
 ### Objective
-Ensure the codebase is clean, documented, and ready to demo.
+Surface the new AI-generated fields (justification, day summary) in the existing demo UI.
+No redesign — minimal additions only.
 
 ### Tasks
-- [ ] Remove all debug `print()` statements from `core/` and `providers/` (keep them only in `main.py`)
-- [ ] Ensure `.env` is listed in `.gitignore`
-- [ ] Verify `docs/ALGORITHM.md` is unchanged from the original specification
-- [ ] Verify `docs/AGENTS.md` matches the actual project structure
-- [ ] Verify `docs/PLAN.md` matches the phases actually implemented
-- [ ] Ensure `requirements.txt` lists only packages actually used
-- [ ] Run the full test suite one final time:
+
+- [ ] Open `static/index.html`.
+- [ ] In the day-rendering section, add display of `day.day_summary` below the day header.
+- [ ] In the itinerary-entry rendering section, add display of `entry.ai_justification` as a small italic line below the entry details.
+- [ ] Ensure `escapeHtml()` is applied to both new fields before rendering.
+- [ ] Visually test in a browser: submit a request and confirm justifications appear.
+
+### Tests
+
+Manual verification:
+- [ ] Submit a trip request from the browser.
+- [ ] Confirm day summary appears on each day card.
+- [ ] Confirm AI justification appears on each itinerary entry.
+- [ ] Confirm no raw HTML or script injection is possible (escapeHtml is applied).
+
+### Success Criteria
+
+- `day_summary` is visible in the rendered day card.
+- `ai_justification` is visible under each entry.
+- Page still renders correctly when fields are null/missing.
+
+---
+
+## Phase 8 — Full Test Suite Pass
+
+### Objective
+All tests green before attempting a live end-to-end run.
+
+### Tasks
+
+- [ ] Run the complete test suite:
   ```bash
   pytest tests/ -v
   ```
-- [ ] Do a manual end-to-end demo run:
-  ```bash
-  python main.py --city Mysuru --days 2 --people 2 --theme Historical --budget_tier Medium --total_budget 8000 --start_date 2025-08-10
-  ```
-- [ ] Confirm the API response matches the contract defined in `docs/AGENTS.md`
+- [ ] Fix any failures before proceeding.
+- [ ] Confirm the following test files all pass:
+  - `tests/test_filter.py` — hotel ranking (unchanged logic, should still pass).
+  - `tests/test_budget.py` — budget module (new).
+  - `tests/test_ai_planner.py` — AI planner with mocked OpenAI (new).
+  - `tests/test_api.py` — integration test with mocked providers and mocked OpenAI.
+- [ ] Confirm `tests/test_optimizer.py` either passes (if kept as legacy) or is deleted and replaced by `test_ai_planner.py`.
 
 ### Success Criteria
-- All tests pass
-- Manual CLI demo runs without errors
-- API returns correctly structured JSON
-- No API keys are hardcoded anywhere in the source code
-- Project is ready to demo or hand off to another developer
+
+```
+pytest tests/ -v
+# All tests PASSED. No failures. No errors.
+```
 
 ---
 
-## Agent Execution Rules (Summary)
+## Phase 9 — Live End-to-End Validation
 
-1. Read `docs/AGENTS.md` and `docs/ALGORITHM.md` before writing any code
-2. Implement phases in order — Phase 1 through Phase 12
-3. Run the listed tests after each phase before proceeding
-4. Never modify the algorithm in `docs/ALGORITHM.md` or in `core/filter.py` / `core/optimizer.py`
-5. Never skip a phase
-6. Ask the user for review before beginning implementation if there is any ambiguity
+### Objective
+Run a real request against live Google Maps and OpenAI APIs and verify the output is correct.
+
+### Tasks
+
+- [ ] Ensure `.env` has both valid API keys.
+- [ ] Start the server: `uvicorn app:app --reload --port 8000`
+- [ ] Send a test request:
+  ```bash
+  curl -X POST http://localhost:8000/api/generate-itinerary \
+    -H "Content-Type: application/json" \
+    -d '{
+      "city": "Mysuru",
+      "trip_start_date": "2025-08-10",
+      "num_days": 2,
+      "num_people": 2,
+      "theme": "Historical",
+      "travel_type": "Couple",
+      "budget_tier": "Medium",
+      "total_budget": 8000
+    }'
+  ```
+- [ ] Inspect the JSON response and verify:
+  - [ ] `hotel` block is present with name, rating, cost_per_night.
+  - [ ] `days` has 2 entries.
+  - [ ] Each day has at least 3 itinerary entries (attractions + meals).
+  - [ ] `ai_justification` is non-empty on every entry.
+  - [ ] No attraction `place_id` appears in both days.
+  - [ ] `summary.within_budget` is `true`.
+- [ ] Also verify the browser frontend at `http://localhost:8000/static/index.html` renders the full result.
+- [ ] Check server logs: confirm no Google Place Details call is made more than once per place.
+
+### Success Criteria
+
+- Valid JSON response from the live endpoint.
+- At least one meal per day.
+- No duplicate attractions.
+- AI justification present on all entries.
+- Total cost ≤ total_budget.
+
+---
+
+## Phase 10 — CLI Validation and Cleanup
+
+### Objective
+Confirm the CLI runner works with the new architecture. Clean up dead code.
+
+### Tasks
+
+- [ ] Run the CLI:
+  ```bash
+  python main.py --city Mysuru --days 2 --people 2 --theme Historical \
+    --travel_type Couple --budget_tier Medium --total_budget 8000
+  ```
+- [ ] Confirm the CLI prints a readable itinerary to stdout.
+- [ ] Delete or archive `core/optimizer.py` (replaced by `core/ai_planner.py`).
+- [ ] Delete `wanderwise_itinerary.json` and `final_itinerary.json` from repo root (stale artifacts).
+- [ ] Delete duplicate `AGENTS.md`, `ALGORITHM.md`, `PLAN.md` from repo root — keep only the copies in `docs/`.
+- [ ] Remove `data/api_dump.json` if it is not referenced anywhere in code.
+- [ ] Run `pytest tests/ -v` once more after cleanup to confirm nothing broke.
+
+### Success Criteria
+
+- CLI prints a full multi-day itinerary without errors.
+- `core/optimizer.py` no longer exists (or is clearly marked as deprecated).
+- Repo root is clean — no duplicate docs, no stale JSON outputs.
+- Full test suite still passes after cleanup.
+
+---
+
+## Phase 11 — Final Documentation Update
+
+### Objective
+Update `docs/` to reflect the new system accurately.
+
+### Tasks
+
+- [ ] Update `docs/AGENTS.md` — confirm it matches the final system (this file was generated for the new system).
+- [ ] Update `docs/PLAN.md` — this file.
+- [ ] Create or update `docs/ALGORITHM.md`:
+  - Describe the new AI-based planning approach.
+  - Document the OpenAI prompt schema (system prompt structure, user prompt variables, expected JSON schema).
+  - Document budget flow (hotel reservation → daily allocation → within-budget check).
+  - Document the hotel selection logic (kept from original: rating × 20 − euclidean distance × 1000).
+  - Note what the old greedy optimizer did and why it was replaced.
+- [ ] Update `README.md` (if present) or create one with:
+  - Project description.
+  - Setup instructions (venv, `.env`, run commands).
+  - API endpoint documentation.
+  - Example request/response.
+
+### Success Criteria
+
+- `docs/` is the single source of truth for all documentation.
+- `docs/ALGORITHM.md` accurately describes the AI planning approach.
+- A new developer can read `docs/` and understand the entire system without reading the code first.
+
+---
+
+## Phase 12 — Handoff Verification Checklist
+
+### Final verification before marking the rebuild complete.
+
+- [ ] `pytest tests/ -v` → all green.
+- [ ] `uvicorn app:app --reload` → server starts with no errors.
+- [ ] `GET /health` → `{"status": "ok"}`.
+- [ ] `POST /api/generate-itinerary` with live keys → valid response.
+- [ ] Browser at `/static/index.html` → full itinerary renders with AI justifications.
+- [ ] `python main.py` → itinerary prints to CLI.
+- [ ] No `requests` import anywhere (replaced by `httpx`).
+- [ ] No `_merge_place_details` call anywhere.
+- [ ] No `optimize_schedule` import anywhere.
+- [ ] `OPENAI_API_KEY` loaded from `.env` only.
+- [ ] `docs/` contains: `AGENTS.md`, `PLAN.md`, `ALGORITHM.md`.
+- [ ] Repo root does not contain duplicate docs or stale JSON artifacts.
+
+---
+
+## Quick Reference — New File Map
+
+```
+Pitch/
+├── .env                          # GOOGLE_MAPS_API_KEY + OPENAI_API_KEY
+├── .env.example                  # Updated with both keys
+├── app.py                        # Refactored orchestration (no optimizer, uses ai_planner)
+├── main.py                       # CLI runner (unchanged interface, updated imports)
+├── requirements.txt              # + openai, + httpx
+├── core/
+│   ├── __init__.py
+│   ├── ai_planner.py             # NEW — OpenAI integration
+│   ├── budget.py                 # NEW — Budget arithmetic
+│   └── filter.py                 # KEPT — hotel ranking only
+├── models/
+│   ├── __init__.py
+│   └── schemas.py                # + ai_justification, + day_summary fields
+├── providers/
+│   ├── __init__.py
+│   └── google_maps.py            # FIXED — no double fetch, httpx, error handling
+├── static/
+│   └── index.html                # UPDATED — shows justification + day summary
+├── tests/
+│   ├── __init__.py
+│   ├── test_ai_planner.py        # NEW
+│   ├── test_budget.py            # NEW
+│   ├── test_filter.py            # KEPT (hotel ranking tests)
+│   └── test_api.py               # UPDATED — mocks plan_day instead of optimize_schedule
+└── docs/
+    ├── AGENTS.md
+    ├── PLAN.md
+    └── ALGORITHM.md
+```
+
+---
+
+*This plan was generated for the WanderWise AI Rebuild. Follow phases in order. Do not proceed to the next phase until the current phase's success criteria are met.*

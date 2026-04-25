@@ -1,7 +1,8 @@
 fastapi
 uvicorn
-requests
+httpx
 python-dotenv
 pydantic
 pytest
-httpx
+pytest-asyncio
+openai>=1.0
