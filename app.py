@@ -64,7 +64,12 @@ def build_itinerary(payload: ItineraryRequest) -> ItineraryResponse:
     sample_pois = fetch_places(payload.city, "tourist_attraction", 10)
     best_hotel = rank_hotels(hotel_candidates, sample_pois)
     
-    hotel_cost_per_night = get_item_cost(best_hotel.get("price_level"), payload.num_people, "hotel")
+    hotel_cost_per_night = get_item_cost(
+        best_hotel.get("price_level"), 
+        payload.num_people, 
+        "hotel", 
+        best_hotel.get("types")
+    )
     hotel_total_cost = reserve_hotel_budget(hotel_cost_per_night, payload.num_days)
 
     # Fetch more candidates to ensure variety
@@ -72,9 +77,19 @@ def build_itinerary(payload: ItineraryRequest) -> ItineraryResponse:
     restaurants = fetch_places(payload.city, "restaurant", 25)
 
     for p in attractions:
-        p["estimated_cost"] = get_item_cost(p.get("price_level"), payload.num_people, "attraction")
+        p["estimated_cost"] = get_item_cost(
+            p.get("price_level"), 
+            payload.num_people, 
+            "attraction", 
+            p.get("types")
+        )
     for r in restaurants:
-        r["estimated_cost"] = get_item_cost(r.get("price_level"), payload.num_people, "restaurant")
+        r["estimated_cost"] = get_item_cost(
+            r.get("price_level"), 
+            payload.num_people, 
+            "restaurant", 
+            r.get("types")
+        )
 
     # 2. Planning Orchestration
     trip_context = {

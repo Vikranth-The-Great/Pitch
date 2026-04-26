@@ -38,14 +38,7 @@ def _poi_lat_lng(poi: dict[str, Any]) -> tuple[float, float]:
 
 
 def rank_places(places: list[dict[str, Any]], theme: str, budget_tier: str) -> list[dict[str, Any]]:
-    """Score and sort POIs using the WanderWise weighted heuristic.
-
-    Formula (from docs/ALGORITHM.md):
-        score = (rating * 10) + theme_bonus - budget_penalty
-    where:
-        theme_bonus  = 50 if the POI type matches the requested theme, else 0
-        budget_penalty = 40 if budget_tier == "Low" and price_level > 2, else 0
-    """
+    """Score and sort POIs using the WanderWise weighted heuristic."""
     selected_theme = _normalize_theme(theme)
     selected_budget_tier = _normalize_budget_tier(budget_tier)
     theme_types = THEME_MAP.get(selected_theme, [])
@@ -69,11 +62,7 @@ def rank_places(places: list[dict[str, Any]], theme: str, budget_tier: str) -> l
 
 
 def rank_hotels(hotels: list[dict[str, Any]], sample_pois: list[dict[str, Any]]) -> dict[str, Any]:
-    """Select the best hotel using centrality scoring (from docs/ALGORITHM.md).
-
-    Formula:
-        hotel_score = (rating * 20) - (euclidean_distance_to_poi_centroid * 1000)
-    """
+    """Select the best hotel using centrality scoring."""
     if not hotels:
         raise ValueError("hotels must not be empty")
     if not sample_pois:
@@ -93,26 +82,34 @@ def rank_hotels(hotels: list[dict[str, Any]], sample_pois: list[dict[str, Any]])
         ranked_hotels.append(ranked_hotel)
 
     best_hotel = max(ranked_hotels, key=lambda item: item["hotel_score"])
-    best_hotel.setdefault(
-        "justification",
-        f"Picked for its {best_hotel.get('rating', 0)} rating and proximity to the center of your planned activities.",
-    )
     return best_hotel
 
 
-def get_item_cost(price_level: int | None, people: int, category: str) -> int:
+def get_item_cost(price_level: int | None, people: int, category: str, types: list[str] | None = None) -> int:
     """Return the estimated INR cost for a visit.
-
-    Uses fixed price maps from docs/ALGORITHM.md:
-        PRICE_MAP       = {0: 0, 1: 300, 2: 700, 3: 1500, 4: 3000}   (per person)
-        HOTEL_PRICE_MAP = {0: 0, 1: 2500, 2: 5000, 3: 10000, 4: 20000} (flat/night)
-
-    Defaults price_level to 1 when None.
+    
+    If price_level is None, it uses heuristics based on the place 'types' 
+    to provide a more varied and realistic cost estimate.
     """
-    normalized_price_level = 1 if price_level is None else int(price_level)
-    normalized_category = (category or "").strip().lower()
+    types = types or []
+    
+    # 1. Handle Hotel separately
+    if category.lower() == "hotel":
+        lvl = 1 if price_level is None else int(price_level)
+        return HOTEL_PRICE_MAP.get(lvl, HOTEL_PRICE_MAP[1])
 
-    if normalized_category == "hotel":
-        return HOTEL_PRICE_MAP.get(normalized_price_level, HOTEL_PRICE_MAP[1])
+    # 2. Heuristic for price_level if missing
+    if price_level is None:
+        if "amusement_park" in types or "zoo" in types:
+            price_level = 3
+        elif "restaurant" in types:
+            price_level = 2
+        elif "museum" in types or "art_gallery" in types:
+            price_level = 1
+        elif "park" in types or "natural_feature" in types or "place_of_worship" in types:
+            price_level = 0
+        else:
+            price_level = 1
 
-    return PRICE_MAP.get(normalized_price_level, PRICE_MAP[1]) * people
+    cost_per_person = PRICE_MAP.get(int(price_level), PRICE_MAP[1])
+    return cost_per_person * people
