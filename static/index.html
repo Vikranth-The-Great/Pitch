@@ -151,10 +151,19 @@
     }
 
     .hotel-card {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
+      display: grid;
+      grid-template-columns: 120px 1fr auto;
+      gap: 20px;
+      align-items: center;
       border-left: 4px solid var(--accent-2);
+    }
+
+    .hotel-img {
+      width: 120px;
+      height: 120px;
+      border-radius: 16px;
+      object-fit: cover;
+      background: #1e293b;
     }
 
     .hotel-info h3 { margin: 0 0 4px; font-size: 1.2rem; }
@@ -192,6 +201,21 @@
       color: var(--muted);
       text-align: right;
       padding-top: 2px;
+    }
+
+    .entry-main {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .entry-thumb {
+      width: 100px;
+      height: 100px;
+      border-radius: 12px;
+      object-fit: cover;
+      background: #1e293b;
     }
 
     .entry-content h4 { margin: 0 0 4px; font-size: 1rem; color: #fff; }
@@ -233,6 +257,7 @@
       background: rgba(255, 255, 255, 0.02);
       border-radius: 16px;
       text-align: center;
+      margin-top: 20px;
     }
     .footer-stat { display: grid; gap: 4px; }
     .footer-stat span:first-child { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 700; }
@@ -257,6 +282,10 @@
 
     @media (max-width: 1000px) {
       .grid { grid-template-columns: 1fr; }
+      .hotel-card { grid-template-columns: 1fr; text-align: center; }
+      .hotel-img { margin: 0 auto; }
+      .entry-main { grid-template-columns: 1fr; }
+      .entry-thumb { width: 100%; height: 150px; }
     }
   </style>
 </head>
@@ -353,8 +382,11 @@
     }
 
     function renderItinerary(data) {
+      const hotelImg = data.hotel.image_url ? `<img src="${data.hotel.image_url}" class="hotel-img" alt="${escapeHtml(data.hotel.name)}" />` : '';
+      
       const hotelHtml = `
         <div class="card hotel-card">
+          ${hotelImg}
           <div class="hotel-info">
             <p class="eyebrow">Recommended Hotel</p>
             <h3>${escapeHtml(data.hotel.name)}</h3>
@@ -374,17 +406,21 @@
         const entriesHtml = day.itinerary.map(entry => {
           const mealTag = entry.meal_type ? `<span class="meal-badge">${escapeHtml(entry.meal_type)}</span>` : '';
           const travelTime = entry.travel_time_from_previous ? `<span class="travel-tag">🚗 ${entry.travel_time_from_previous} min travel</span>` : '';
+          const thumb = entry.image_url ? `<img src="${entry.image_url}" class="entry-thumb" alt="${escapeHtml(entry.location_name)}" />` : '';
           
           return `
             <div class="entry">
               <div class="entry-time">${escapeHtml(entry.arrival_time)}</div>
-              <div class="entry-content">
-                <h4>${mealTag}${escapeHtml(entry.location_name)} ${travelTime}</h4>
-                <div class="entry-meta">
-                  ${escapeHtml(entry.category)} • 
-                  Cost: ₹${entry.cost}
+              <div class="entry-main">
+                ${thumb}
+                <div class="entry-content">
+                  <h4>${mealTag}${escapeHtml(entry.location_name)} ${travelTime}</h4>
+                  <div class="entry-meta">
+                    ${escapeHtml(entry.category)} • 
+                    Cost: ₹${entry.cost}
+                  </div>
+                  ${entry.ai_justification ? `<div class="entry-justification">${escapeHtml(entry.ai_justification)}</div>` : ''}
                 </div>
-                ${entry.ai_justification ? `<div class="entry-justification">${escapeHtml(entry.ai_justification)}</div>` : ''}
               </div>
             </div>
           `;
